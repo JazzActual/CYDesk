@@ -37,13 +37,13 @@ The settings are stored in the ESP32's flash (`Preferences`). Nothing private is
 
 1. [x] Scaffold + hello screen: confirmed ILI9341 (ILI9341_2_DRIVER), colours correct, rotation 1, uploads at 460800 baud
 2. [x] Touch (XPT2046 on VSPI, display moved to HSPI): tap cycles pages, 5 s hold with progress bar
-3. [ ] Setup portal, Wi-Fi and saved settings, including the city lookup
+3. [~] Setup portal, Wi-Fi and saved settings (3a done), city lookup (3b)
 4. [ ] Home: clock, date, greeting
 5. [ ] Weather fetch + home weather block + icon set (with a test mode that steps through every icon)
 6. [ ] Moon phase with the weather layers drawn on top
 7. [ ] Hourly page
 8. [ ] Badge page (wsrv.nl → TJpg_Decoder)
-9. [ ] Polish: offline/stale markers, memory check, fallbacks
+9. [ ] Polish: offline/stale markers, memory check, fallbacks, rework the setup portal (works, but needs a better experience)
 
 ## Constraints
 

@@ -1,17 +1,20 @@
-// CYDesk — Step 2: touch + page switching
+// CYDesk — Step 3a: setup portal + Wi-Fi
 //
-// Tap anywhere          -> next page (Home -> Hourly -> Badge -> Home ...)
-// Hold for 5 seconds    -> "setup" (just a stub screen for now; the real
-//                          Wi-Fi setup portal arrives in step 3)
+// First boot (no settings / no Wi-Fi saved) -> setup portal opens by itself.
+// Tap anywhere          -> next page
+// Hold for 5 seconds    -> setup portal (change Wi-Fi, name, city, badge, units)
 //
-// While you hold, a bar fills along the bottom so you can see the long
-// press coming.
+// Page 1 is a temporary "Settings check" page that shows what was saved and
+// whether Wi-Fi is connected.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+#include <WiFi.h>
 
 #include "pages.h"
 #include "pins.h"
+#include "portal.h"
+#include "settings.h"
 #include "theme.h"
 #include "touch.h"
 
@@ -25,9 +28,10 @@ constexpr int HOLD_BAR_HEIGHT = 6;
 TFT_eSPI tft;
 TouchInput touch;
 PageManager pages(tft);
+Settings settings;
 
-// Placeholders until the real pages exist.
-PlaceholderPage homePage("Home", theme::CYAN, 1, 3);
+// Pages, in tap order. Home and Hourly are placeholders until steps 4–7.
+StatusPage statusPage(settings);
 PlaceholderPage hourlyPage("Hourly", theme::PINK, 2, 3);
 PlaceholderPage badgePage("Badge", theme::TEXT, 3, 3);
 
@@ -38,15 +42,12 @@ void ledsOff() {
   }
 }
 
-// Step 3 replaces this with the real Wi-Fi setup portal.
-void showSetupStub() {
-  Serial.println("[setup] long press -> setup portal (stub)");
-  tft.fillScreen(theme::BG);
-  tft.setTextDatum(MC_DATUM);
-  tft.setTextColor(theme::CYAN, theme::BG);
-  tft.drawString("Setup", tft.width() / 2, tft.height() / 2 - 14, 4);
-  tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString("(portal comes in step 3)", tft.width() / 2, tft.height() / 2 + 16, 2);
+// Runs the portal, then gets back to normal: reconnect Wi-Fi if needed and
+// redraw the current page.
+void openSetup(const char* reason) {
+  const bool connected = runSetupPortal(tft, settings, reason);
+  if (!connected && hasSavedWifi()) WiFi.begin();  // keep trying in the background
+  pages.redraw();
 }
 
 // Draws the "keep holding..." progress bar along the bottom edge.
@@ -75,35 +76,39 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk step 2: touch + pages");
+  Serial.println("\nCYDesk step 3a: setup portal + Wi-Fi");
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
   touch.begin();
 
-  pages.add(&homePage);
+  pages.add(&statusPage);
   pages.add(&hourlyPage);
   pages.add(&badgePage);
-  pages.redraw();
+
+  settings.load();
+  WiFi.mode(WIFI_STA);  // "station" = a normal Wi-Fi client
+  WiFi.setAutoReconnect(true);
+
+  if (!settings.isComplete() || !hasSavedWifi()) {
+    openSetup("First-time setup");
+  } else {
+    // Connect with the saved network in the background; the status page
+    // updates itself once it's connected.
+    WiFi.begin();
+    pages.redraw();
+  }
 
   Serial.printf("Ready. Free heap: %u bytes\n", ESP.getFreeHeap());
 }
 
 void loop() {
-  static bool inSetup = false;  // is the setup stub on screen?
-
   switch (touch.poll()) {
     case TouchEvent::Tap:
-      if (inSetup) {
-        inSetup = false;
-        pages.redraw();  // back to the page we came from
-      } else {
-        pages.next();
-      }
+      pages.next();
       break;
     case TouchEvent::LongPress:
-      inSetup = true;
-      showSetupStub();
+      openSetup("Setup");
       break;
     case TouchEvent::None:
       break;

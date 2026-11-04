@@ -40,6 +40,21 @@ class PageManager {
   size_t current_ = 0;
 };
 
+// Temporary page for step 3: shows the saved settings and Wi-Fi status so we
+// can check the setup portal worked. Replaced by the real Home page in step 4.
+struct Settings;
+class StatusPage : public Page {
+ public:
+  explicit StatusPage(const Settings& settings) : settings_(settings) {}
+  const char* name() const override { return "Status"; }
+  void draw(TFT_eSPI& tft) override;
+  void update(TFT_eSPI& tft) override;  // redraws when Wi-Fi connects/drops
+
+ private:
+  const Settings& settings_;
+  bool shownConnected_ = false;
+};
+
 // Temporary stand-in page for step 2: shows its name and page number.
 class PlaceholderPage : public Page {
  public:
