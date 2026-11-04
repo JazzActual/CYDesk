@@ -1,6 +1,7 @@
 #include "fonts.h"
 
 // The font data lives in flash. Include each header in exactly one .cpp file.
+#include "fonts/rajdhani_14.h"
 #include "fonts/rajdhani_16.h"
 #include "fonts/rajdhani_24.h"
 #include "fonts/rajdhani_40.h"
@@ -12,6 +13,7 @@ Id loaded = Id::BuiltIn;
 
 const uint8_t* dataFor(Id id) {
   switch (id) {
+    case Id::Tiny:   return rajdhani_14;
     case Id::Small:  return rajdhani_16;
     case Id::Medium: return rajdhani_24;
     case Id::Temp:   return rajdhani_40;

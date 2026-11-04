@@ -46,10 +46,33 @@ bool computeUtcOffset(const char* localText, int64_t utcEpoch, int32_t& offsetOu
   offsetOut = static_cast<int32_t>(((diff + (diff >= 0 ? 450 : -450)) / 900) * 900);
   return true;
 }
+
+// Turns a forecast date ("2026-11-04") and a sunrise/sunset time ("07:12 AM",
+// local time) into a UTC timestamp. Returns 0 for anything else, e.g.
+// "No sunrise" near the poles.
+time_t parseSunTime(const char* date, const char* clock, int32_t utcOffset) {
+  int y, mo, d, h, mi;
+  char ampm[3] = {0};
+  if (!date || !clock || sscanf(date, "%d-%d-%d", &y, &mo, &d) != 3) return 0;
+  if (sscanf(clock, "%d:%d %2s", &h, &mi, ampm) != 3) return 0;
+  if (h == 12) h = 0;                           // 12:xx AM is just after midnight
+  if (ampm[0] == 'P' || ampm[0] == 'p') h += 12;  // PM
+  const int64_t local = daysFromCivil(y, mo, d) * 86400 + h * 3600 + mi * 60;
+  return static_cast<time_t>(local - utcOffset);
+}
 }  // namespace
 
-CurrentWeather fetchCurrent(const Settings& settings) {
-  CurrentWeather result;
+int WeatherReport::precipChanceAt(time_t when) const {
+  // Clock not synced yet: the first forecast hour is the current one.
+  if (when < 1700000000) return hourCount > 0 ? hours[0].precipChance : -1;
+  for (int i = 0; i < hourCount; i++) {
+    if (when >= hours[i].epoch && when < hours[i].epoch + 3600) return hours[i].precipChance;
+  }
+  return -1;
+}
+
+WeatherReport fetchWeather(const Settings& settings) {
+  WeatherReport result;
   if (WiFi.status() != WL_CONNECTED) {
     result.error = "No Wi-Fi";
     return result;
@@ -67,9 +90,10 @@ CurrentWeather fetchCurrent(const Settings& settings) {
   // little length markers mixed into the data), which the JSON reader below
   // can't handle when reading straight from the network stream.
   http.useHTTP10(true);
-  // current.json: right-now conditions plus the place and its local time.
-  const String url = String(API_BASE) + "/current.json?key=" + settings.weatherKey +
-                     "&q=" + settings.zip + "&aqi=no";
+  // forecast.json with 2 days: current conditions, the place and its local
+  // time, sunrise/sunset for today and tomorrow, and 48 hourly forecasts.
+  const String url = String(API_BASE) + "/forecast.json?key=" + settings.weatherKey +
+                     "&q=" + settings.zip + "&days=2&aqi=no&alerts=no";
   if (!http.begin(tls, url)) {
     result.error = "Couldn't start request";
     return result;
@@ -97,6 +121,19 @@ CurrentWeather fetchCurrent(const Settings& settings) {
   filter["current"]["is_day"] = true;
   filter["current"]["condition"]["code"] = true;
   filter["current"]["condition"]["text"] = true;
+  // For arrays, the filter's first element applies to every element.
+  JsonObject dayFilter = filter["forecast"]["forecastday"].add<JsonObject>();
+  dayFilter["date"] = true;
+  dayFilter["astro"]["sunrise"] = true;
+  dayFilter["astro"]["sunset"] = true;
+  JsonObject hourFilter = dayFilter["hour"].add<JsonObject>();
+  hourFilter["time_epoch"] = true;
+  hourFilter["temp_f"] = true;
+  hourFilter["temp_c"] = true;
+  hourFilter["is_day"] = true;
+  hourFilter["condition"]["code"] = true;
+  hourFilter["chance_of_rain"] = true;
+  hourFilter["chance_of_snow"] = true;
   filter["error"]["code"] = true;
   filter["error"]["message"] = true;
 
@@ -139,6 +176,32 @@ CurrentWeather fetchCurrent(const Settings& settings) {
   result.isDay = (current["is_day"] | 1) == 1;
   result.conditionCode = current["condition"]["code"] | 0;
   result.conditionText = current["condition"]["text"] | "";
+
+  // The forecast: sunrise/sunset per day, and every hour from the current one on.
+  const time_t now = doc["location"]["localtime_epoch"].as<long>();
+  JsonArray days = doc["forecast"]["forecastday"];
+  int dayIndex = 0;
+  for (JsonObject day : days) {
+    const char* date = day["date"];
+    if (dayIndex < 2) {
+      result.sunrise[dayIndex] = parseSunTime(date, day["astro"]["sunrise"], result.utcOffsetSec);
+      result.sunset[dayIndex] = parseSunTime(date, day["astro"]["sunset"], result.utcOffsetSec);
+    }
+    dayIndex++;
+    for (JsonObject hour : day["hour"].as<JsonArray>()) {
+      const time_t epoch = hour["time_epoch"].as<long>();
+      if (epoch + 3600 <= now) continue;  // already over
+      if (result.hourCount >= WeatherReport::MAX_HOURS) break;
+      HourForecast& h = result.hours[result.hourCount++];
+      h.epoch = epoch;
+      h.tempF = hour["temp_f"] | NAN;
+      h.tempC = hour["temp_c"] | NAN;
+      h.isDay = (hour["is_day"] | 1) == 1;
+      h.conditionCode = hour["condition"]["code"] | 0;
+      h.precipChance = max(hour["chance_of_rain"] | 0, hour["chance_of_snow"] | 0);
+    }
+  }
+
   result.ok = true;
   return result;
 }

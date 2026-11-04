@@ -6,7 +6,7 @@
 
 namespace weather {
 namespace {
-CurrentWeather lastGood;
+WeatherReport lastGood;
 String error;
 bool changed = false;
 bool fetchedOnce = false;
@@ -30,7 +30,7 @@ void update(Settings& settings) {
   lastAttempt = millis();
   Serial.println("[weather] fetching...");
 
-  CurrentWeather fresh = fetchCurrent(settings);
+  WeatherReport fresh = fetchWeather(settings);
   changed = true;
   if (!fresh.ok) {
     error = fresh.error;
@@ -45,8 +45,17 @@ void update(Settings& settings) {
     settings.placeLabel = fresh.place;
     settings.save();
   }
-  Serial.printf("[weather] ok: %.0fF, %d%% humidity, code %d, %s\n", fresh.tempF, fresh.humidity,
-                fresh.conditionCode, fresh.isDay ? "day" : "night");
+  Serial.printf("[weather] ok: %.0fF, %d%% humidity, code %d, %s; %d forecast hours, "
+                "precip now %d%%\n",
+                fresh.tempF, fresh.humidity, fresh.conditionCode, fresh.isDay ? "day" : "night",
+                fresh.hourCount, fresh.precipChanceAt(time(nullptr)));
+  for (int d = 0; d < 2; d++) {
+    // Printed as minutes past local midnight, so the log shows no dates or places.
+    auto local = [&](time_t t) { return t ? (int)(((t + fresh.utcOffsetSec) % 86400) / 60) : -1; };
+    Serial.printf("[weather] day %d: sunrise %02d:%02d, sunset %02d:%02d (local)\n", d,
+                  local(fresh.sunrise[d]) / 60, local(fresh.sunrise[d]) % 60,
+                  local(fresh.sunset[d]) / 60, local(fresh.sunset[d]) % 60);
+  }
 }
 
 bool takeChanged() {
@@ -55,7 +64,7 @@ bool takeChanged() {
   return was;
 }
 
-const CurrentWeather& current() { return lastGood; }
+const WeatherReport& current() { return lastGood; }
 const String& lastError() { return error; }
 
 }  // namespace weather

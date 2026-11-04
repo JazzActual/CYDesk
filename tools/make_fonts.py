@@ -32,7 +32,8 @@ DEGREE = "°"
 
 # (C name, font file, pixel size, characters)
 FONTS = [
-    ("rajdhani_16", "Rajdhani-SemiBold.ttf", 16, ASCII + DEGREE),  # date, place, labels
+    ("rajdhani_14", "Rajdhani-SemiBold.ttf", 14, ASCII + DEGREE),  # date, %RH
+    ("rajdhani_16", "Rajdhani-SemiBold.ttf", 16, ASCII + DEGREE),  # sun times, rain chance, labels
     ("rajdhani_24", "Rajdhani-SemiBold.ttf", 24, ASCII + DEGREE),  # greeting, AM/PM
     ("rajdhani_40", "Rajdhani-SemiBold.ttf", 40, "0123456789-" + DEGREE + "FC "),  # temperature
     ("rajdhani_56", "Rajdhani-SemiBold.ttf", 56, "0123456789:- "),  # clock digits

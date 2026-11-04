@@ -23,7 +23,7 @@ void refreshSoon();
 bool takeChanged();
 
 // The last good weather (check .ok; false until the first success).
-const CurrentWeather& current();
+const WeatherReport& current();
 
 // Why the most recent fetch failed ("" if it worked).
 const String& lastError();

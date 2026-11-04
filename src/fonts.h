@@ -11,7 +11,8 @@ namespace fonts {
 
 enum class Id {
   BuiltIn,   // back to TFT_eSPI's numbered fonts
-  Small,     // 16 px  date, place, labels
+  Tiny,      // 14 px  date, humidity
+  Small,     // 16 px  sun times, rain chance, labels
   Medium,    // 24 px  greeting, AM/PM
   Temp,      // 40 px  temperature (digits, minus, degree sign, F, C only)
   Clock,     // 56 px  clock (digits, colon, minus only)
