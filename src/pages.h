@@ -45,13 +45,16 @@ class PageManager {
 struct Settings;
 class StatusPage : public Page {
  public:
-  explicit StatusPage(const Settings& settings) : settings_(settings) {}
+  // placeError: why the weather check failed ("" while checking / when OK).
+  StatusPage(const Settings& settings, const String& placeError)
+      : settings_(settings), placeError_(placeError) {}
   const char* name() const override { return "Status"; }
   void draw(TFT_eSPI& tft) override;
   void update(TFT_eSPI& tft) override;  // redraws when Wi-Fi connects/drops
 
  private:
   const Settings& settings_;
+  const String& placeError_;
   bool shownConnected_ = false;
 };
 

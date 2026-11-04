@@ -11,11 +11,10 @@ void Settings::load() {
   Preferences prefs;
   prefs.begin(NVS_NAMESPACE, /*readOnly=*/true);
   name       = prefs.getString("name", "");
-  city       = prefs.getString("city", "");
+  zip        = prefs.getString("zip", "");
+  weatherKey = prefs.getString("wkey", "");
   badgeUrl   = prefs.getString("badge", "");
   fahrenheit = prefs.getBool("fahrenheit", true);
-  latitude   = prefs.getFloat("lat", NAN);
-  longitude  = prefs.getFloat("lon", NAN);
   placeLabel = prefs.getString("place", "");
   prefs.end();
 }
@@ -24,12 +23,12 @@ void Settings::save() const {
   Preferences prefs;
   prefs.begin(NVS_NAMESPACE, /*readOnly=*/false);
   prefs.putString("name", name);
-  prefs.putString("city", city);
+  prefs.putString("zip", zip);
+  prefs.putString("wkey", weatherKey);
   prefs.putString("badge", badgeUrl);
   prefs.putBool("fahrenheit", fahrenheit);
-  prefs.putFloat("lat", latitude);
-  prefs.putFloat("lon", longitude);
   prefs.putString("place", placeLabel);
+  prefs.remove("city");  // left over from before the switch to ZIP codes
   prefs.end();
 }
 

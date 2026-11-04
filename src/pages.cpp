@@ -2,7 +2,9 @@
 
 #include <WiFi.h>
 
+#include "qr_draw.h"
 #include "settings.h"
+#include "settings_web.h"
 #include "theme.h"
 
 // ---- PageManager -----------------------------------------------------------
@@ -39,8 +41,41 @@ String fitText(TFT_eSPI& tft, String text, int maxWidth, uint8_t font) {
 }
 }  // namespace
 
+// Shown when Wi-Fi works but name/ZIP/key are still missing: a QR code and
+// the address of the settings page.
+static void drawFinishSetup(TFT_eSPI& tft) {
+  tft.fillScreen(theme::BG);
+  tft.fillRect(0, 0, tft.width(), 3, theme::CYAN);
+
+  // The QR code uses the IP address rather than cydesk.local: phones open it
+  // instantly, while ".local" names can take a few seconds to look up.
+  const String url = "http://" + WiFi.localIP().toString();
+  const int qrSize = drawQrCode(tft, url.c_str(), 12, 44, 120);
+
+  const int x = 12 + qrSize + 14;
+  tft.setTextDatum(TL_DATUM);
+  tft.setTextColor(theme::CYAN, theme::BG);
+  tft.drawString("Finish setup", 12, 10, 4);
+
+  tft.setTextColor(theme::TEXT, theme::BG);
+  tft.drawString("Scan, or open this", x, 46, 2);
+  tft.drawString("on a phone or computer", x, 64, 2);
+  tft.drawString("on the same Wi-Fi:", x, 82, 2);
+  tft.setTextColor(theme::PINK, theme::BG);
+  tft.drawString(String(settings_web::HOSTNAME) + ".local", x, 108, 4);
+  tft.setTextColor(theme::MUTED, theme::BG);
+  tft.drawString("or " + WiFi.localIP().toString(), x, 140, 2);
+
+  tft.setTextDatum(BC_DATUM);
+  tft.drawString("Add your name, ZIP code and WeatherAPI key", tft.width() / 2, tft.height() - 10, 2);
+}
+
 void StatusPage::draw(TFT_eSPI& tft) {
   shownConnected_ = WiFi.status() == WL_CONNECTED;
+  if (shownConnected_ && !settings_.isComplete()) {
+    drawFinishSetup(tft);
+    return;
+  }
 
   tft.fillScreen(theme::BG);
   tft.fillRect(0, 0, tft.width(), 3, theme::CYAN);
@@ -49,14 +84,14 @@ void StatusPage::draw(TFT_eSPI& tft) {
   tft.drawString("Settings check", 12, 12, 4);
 
   const int labelX = 12, valueX = 92, valueWidth = tft.width() - valueX - 8;
-  int y = 50;
+  int y = 44;
   auto row = [&](const char* label, const String& value, uint16_t colour) {
     tft.setTextColor(theme::MUTED, theme::BG);
     tft.drawString(label, labelX, y, 2);
     tft.setTextColor(colour, theme::BG);
     tft.drawString(fitText(tft, value.length() ? value : String("(not set)"), valueWidth, 2),
                    valueX, y, 2);
-    y += 22;
+    y += 20;
   };
 
   if (shownConnected_) {
@@ -65,13 +100,24 @@ void StatusPage::draw(TFT_eSPI& tft) {
     row("Wi-Fi", "connecting...", theme::PINK);
   }
   row("Name", settings_.name, theme::TEXT);
-  row("City", settings_.city, theme::TEXT);
+  row("ZIP", settings_.zip, theme::TEXT);
+  row("API key", settings_.weatherKey.length() ? "saved" : "", theme::TEXT);
+  if (settings_.placeLabel.length()) {
+    row("Weather", "Found: " + settings_.placeLabel, theme::CYAN);
+  } else if (placeError_.length()) {
+    row("Weather", placeError_, theme::PINK);
+  } else {
+    row("Weather", "checking...", theme::MUTED);
+  }
   row("Units", settings_.fahrenheit ? "Fahrenheit" : "Celsius", theme::TEXT);
   row("Badge", settings_.badgeUrl, theme::TEXT);
 
   tft.setTextColor(theme::MUTED, theme::BG);
   tft.setTextDatum(BC_DATUM);
-  tft.drawString("tap: next page   hold 5 s: setup", tft.width() / 2, tft.height() - 12, 2);
+  const String hint = shownConnected_
+      ? String("settings: ") + settings_web::HOSTNAME + ".local   hold 5 s: Wi-Fi"
+      : String("hold 5 s: Wi-Fi setup");
+  tft.drawString(hint, tft.width() / 2, tft.height() - 12, 2);
 }
 
 void StatusPage::update(TFT_eSPI& tft) {

@@ -1,11 +1,16 @@
-// CYDesk — Step 3a: setup portal + Wi-Fi
+// CYDesk — Step 3: Wi-Fi portal + settings page + weather location check
 //
-// First boot (no settings / no Wi-Fi saved) -> setup portal opens by itself.
+// Setup happens in two parts:
+//   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (DeskBuddy-Setup).
+//      It only asks for the home Wi-Fi network and password.
+//   2. On the home Wi-Fi, the board serves a settings page at
+//      http://cydesk.local for name, ZIP, WeatherAPI key, badge and units.
+//
 // Tap anywhere          -> next page
-// Hold for 5 seconds    -> setup portal (change Wi-Fi, name, city, badge, units)
+// Hold for 5 seconds    -> Wi-Fi portal again (e.g. new router)
 //
-// Page 1 is a temporary "Settings check" page that shows what was saved and
-// whether Wi-Fi is connected.
+// Page 1 is a temporary "Settings check" page that shows what was saved,
+// whether Wi-Fi is connected, and which place WeatherAPI found for the ZIP.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -15,8 +20,10 @@
 #include "pins.h"
 #include "portal.h"
 #include "settings.h"
+#include "settings_web.h"
 #include "theme.h"
 #include "touch.h"
+#include "weather_api.h"
 
 // Landscape. If everything comes out upside down, change this to 3.
 constexpr uint8_t SCREEN_ROTATION = 1;
@@ -25,13 +32,17 @@ constexpr uint8_t SCREEN_ROTATION = 1;
 constexpr uint32_t HOLD_BAR_DELAY_MS = 1000;
 constexpr int HOLD_BAR_HEIGHT = 6;
 
+// If checking the ZIP/key fails (e.g. no internet yet), try again this often.
+constexpr uint32_t PLACE_RETRY_MS = 60 * 1000;
+
 TFT_eSPI tft;
 TouchInput touch;
 PageManager pages(tft);
 Settings settings;
+String placeError;  // last reason the ZIP/key check failed, shown on screen
 
 // Pages, in tap order. Home and Hourly are placeholders until steps 4–7.
-StatusPage statusPage(settings);
+StatusPage statusPage(settings, placeError);
 PlaceholderPage hourlyPage("Hourly", theme::PINK, 2, 3);
 PlaceholderPage badgePage("Badge", theme::TEXT, 3, 3);
 
@@ -42,11 +53,51 @@ void ledsOff() {
   }
 }
 
-// Runs the portal, then gets back to normal: reconnect Wi-Fi if needed and
-// redraw the current page.
-void openSetup(const char* reason) {
-  const bool connected = runSetupPortal(tft, settings, reason);
+// Runs the Wi-Fi portal, then gets back to normal: reconnect Wi-Fi if needed
+// and redraw the current page.
+void openWifiSetup(const char* reason) {
+  settings_web::stop();  // the portal needs the web port for itself
+  const bool connected = runWifiPortal(tft, reason);
   if (!connected && hasSavedWifi()) WiFi.begin();  // keep trying in the background
+  pages.redraw();
+}
+
+// Starts the settings page the first time Wi-Fi is up, and reacts when the
+// form is saved.
+void serviceSettingsPage() {
+  if (!settings_web::isRunning() && WiFi.status() == WL_CONNECTED) {
+    settings_web::begin(settings, placeError);
+  }
+  settings_web::handle();
+  if (settings_web::takeChanged()) {
+    placeError = "";  // settings changed: check the ZIP/key again
+    pages.redraw();
+  }
+}
+
+// Once Wi-Fi is up, ask WeatherAPI whether the ZIP and key work and remember
+// the place name. Only runs while the place is unknown; retries on failure.
+void checkPlaceIfNeeded() {
+  static uint32_t lastAttempt = 0;
+  static bool attempted = false;
+
+  if (settings.placeLabel.length() || !settings.isComplete()) return;
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (attempted && placeError.length() && millis() - lastAttempt < PLACE_RETRY_MS) return;
+
+  attempted = true;
+  lastAttempt = millis();
+  Serial.println("[weather] checking ZIP + key...");
+  const PlaceCheck check = checkPlace(settings);  // blocks ~1–2 s
+  if (check.ok) {
+    settings.placeLabel = check.label;
+    settings.save();
+    placeError = "";
+    Serial.println("[weather] place found");
+  } else {
+    placeError = check.error;
+    Serial.printf("[weather] check failed: %s\n", check.error.c_str());
+  }
   pages.redraw();
 }
 
@@ -76,7 +127,7 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk step 3a: setup portal + Wi-Fi");
+  Serial.println("\nCYDesk step 3: Wi-Fi portal + settings page");
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
@@ -90,8 +141,8 @@ void setup() {
   WiFi.mode(WIFI_STA);  // "station" = a normal Wi-Fi client
   WiFi.setAutoReconnect(true);
 
-  if (!settings.isComplete() || !hasSavedWifi()) {
-    openSetup("First-time setup");
+  if (!hasSavedWifi()) {
+    openWifiSetup("Wi-Fi setup");
   } else {
     // Connect with the saved network in the background; the status page
     // updates itself once it's connected.
@@ -108,12 +159,14 @@ void loop() {
       pages.next();
       break;
     case TouchEvent::LongPress:
-      openSetup("Setup");
+      openWifiSetup("Wi-Fi setup");
       break;
     case TouchEvent::None:
       break;
   }
 
+  serviceSettingsPage();
+  checkPlaceIfNeeded();
   updateHoldBar();
   pages.update();
 }
