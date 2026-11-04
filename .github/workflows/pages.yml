@@ -1,0 +1,37 @@
+# Publishes the flasher/ folder at https://jazzactual.github.io/CYDesk/
+# The installer needs HTTPS, which GitHub Pages provides.
+name: Publish installer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - flasher/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload the installer
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: flasher
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

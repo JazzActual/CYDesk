@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install CYDesk</title>
+<style>
+  body {
+    background: #0a1018;
+    color: #e6edf3;
+    font-family: -apple-system, system-ui, sans-serif;
+    margin: 0;
+    padding: 28px 20px 48px;
+  }
+  main { max-width: 520px; margin: 0 auto; }
+  h1 { color: #00e5ff; font-size: 28px; margin: 0 0 6px; }
+  h2 { font-size: 16px; margin: 22px 0 2px; }
+  esp-web-install-button { display: block; margin: 10px 0 6px; }
+  .sub, .hint { color: #5d7b8c; }
+  .sub { margin: 0 0 22px; }
+  ol { margin: 0 0 22px; padding-left: 1.2em; line-height: 1.55; }
+  li { margin: 0 0 10px; }
+  button {
+    width: 100%;
+    background: #00e5ff;
+    color: #0a1018;
+    border: 0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .note {
+    background: #0f2531;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 22px;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  .note p { margin: 0 0 10px; }
+  .note p:last-child { margin: 0; }
+  code, a { color: #00e5ff; }
+  ul { margin: 6px 0 0; padding-left: 1.2em; }
+  li li { margin: 4px 0; }
+  .warn { color: #ff2d95; }
+  #unsupported, #not-allowed { display: block; margin-top: 8px; }
+</style>
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+<main>
+  <h1>Install CYDesk</h1>
+  <p class="sub">Pick the size on the back of the board. Both are plain ESP32s, so the page cannot tell them apart. <span id="version"></span></p>
+
+  <ol>
+    <li>Use <strong>Chrome, Edge, or Firefox</strong> on a computer. Phones and Safari can't see the USB port.</li>
+    <li>Plug the board in with a <strong>data</strong> USB cable. A charge-only cable will not show a port.</li>
+    <li>These boards use a <strong>CH340</strong> USB chip. Install that driver before you look for a port, then unplug the board and plug it back in.
+      <ul>
+        <li><strong>Windows:</strong> run <code>CH341SER.EXE</code> from the <a href="https://github.com/WCH-IC/download/releases/tag/CH341">WCH driver page</a>.</li>
+        <li><strong>Mac:</strong> install <code>CH341SER_MAC.ZIP</code> from that same page. If macOS asks, allow the driver under System Settings → Privacy &amp; Security.</li>
+        <li><strong>Linux:</strong> the driver is already in the system. Nothing to install.</li>
+      </ul>
+    </li>
+    <li>Click the button for <strong>your</strong> size and choose the port. After the driver is in, it usually says <code>USB Serial</code>, <code>usbserial</code>, or <code>wchusbserial</code>. If the list is empty, the driver or the cable is the problem.</li>
+    <li>On the erase question, leave <strong>Erase device</strong> unchecked. Check it only if you want a blank board. That clears the saved Wi-Fi and keys.</li>
+    <li>When the screen is up, join the Wi-Fi network <code>DeskBuddy-Setup</code> and pick your home network. It has to be 2.4 GHz.</li>
+    <li>Open the address shown on the screen and add your name, ZIP code, WeatherAPI key, and WDGWars key. Those stay on your board.</li>
+  </ol>
+
+  <h2>2.8 inch</h2>
+  <p class="hint">E32R28T / ESP32-2432S028. 240×320.</p>
+  <esp-web-install-button manifest="cyd28/manifest.json">
+    <button slot="activate">Install 2.8 inch</button>
+    <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
+    <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
+  </esp-web-install-button>
+
+  <h2>3.5 inch</h2>
+  <p class="hint">ESP32-3248S035<strong>R</strong>, the resistive one. 320×480. The capacitive board (the one ending in C) uses a different touch chip.</p>
+  <esp-web-install-button manifest="cyd35/manifest.json">
+    <button slot="activate">Install 3.5 inch</button>
+    <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
+    <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
+  </esp-web-install-button>
+
+  <div class="note">
+    <p>Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.</p>
+    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" file. <code>pio run -e cyd35</code> rebuilds the 3.5" file.</p>
+  </div>
+</main>
+<script>
+  fetch("cyd28/manifest.json")
+    .then((r) => r.json())
+    .then((m) => {
+      document.getElementById("version").textContent = "Firmware " + m.version + ".";
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
