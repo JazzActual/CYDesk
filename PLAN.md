@@ -24,7 +24,8 @@ A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S0
      it's sunset | tomorrow's sunrise; before sunrise, yesterday's sunset is estimated as
      today's minus 24 h.
    - Weather icon (`weather_icons.cpp`): 11 kinds drawn from smooth primitives at 72×72 (designed
-     at 96 and scaled). The sky layer is a sun by day or a moon by night. The phase comes from
+     at 96 and scaled). By day the sun is drawn only for clear and partly cloudy; the other
+     icons are the weather alone. Every icon shows the moon at night. The phase comes from
      today's astronomy data (0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter), with cloud,
      rain, snow, sleet, fog and lightning layers on top. `/icons` on
      the settings server steps through every icon, day and night.
@@ -63,6 +64,9 @@ Holding a finger on the screen for about 5 seconds reopens the Wi-Fi portal.
    on the phone asks only for the home Wi-Fi network and password (2.4 GHz).
    *Why it's kept this small:* the iPhone shows this page in a mini-browser that closes, and
    leaves the network, as soon as you switch apps. So it must never need copying and pasting.
+   The board joins that network by name, not by one mesh node's radio address. If the node
+   drops it, it looks for any other node of the same network. A lost link does not open
+   this portal; a 5-second hold still does.
 2. **Settings page** (`settings_web.cpp`): served by the board on the home network at
    `http://cydesk.local` (or its IP). It holds the name, ZIP code, WeatherAPI key, WDGWars key,
    °F or °C, and the 12/24-hour clock (later also the desk pet). While anything is missing, the screen shows a QR code that opens the page. The QR

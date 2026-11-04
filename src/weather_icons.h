@@ -1,8 +1,8 @@
 // Weather icons, drawn from simple shapes (no image files).
 //
-// Each icon is a "sky" layer (sun by day, moon by night) with weather layers
-// on top (clouds, rain, snow, fog, lightning), so the moon stays visible
-// behind the weather at night.
+// Clear and partly cloudy show a sun by day. The other daytime icons are just
+// the weather, so a sun in the corner does not read as a break in the clouds.
+// Every icon shows the moon at night, with the weather drawn on top.
 //
 // WeatherAPI has ~48 condition codes; iconForCode() groups them into the
 // 11 kinds below.

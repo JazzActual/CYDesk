@@ -30,6 +30,7 @@
 #include "touch.h"
 #include "weather_service.h"
 #include "wdgwars_service.h"
+#include "wifi_link.h"
 
 // Landscape. If everything comes out upside down, change this to 3.
 constexpr uint8_t SCREEN_ROTATION = 1;
@@ -62,7 +63,10 @@ void openWifiSetup(const char* reason) {
   settings_web::stop();  // the portal needs the web port for itself
   fonts::use(tft, fonts::Id::BuiltIn);  // the portal screen uses the built-in fonts
   const bool connected = runWifiPortal(tft, reason);
-  if (!connected && hasSavedWifi()) WiFi.begin();  // keep trying in the background
+  // The portal turns power-save back on. Don't call prepareWifi() here: that
+  // forces station mode and would drop a connection the portal just made.
+  holdWifiPolicy();
+  if (!connected && hasSavedWifi()) connectSavedWifi();
   pages.redraw();
 }
 
@@ -136,15 +140,14 @@ void setup() {
   pages.add(&statusPage);
 
   settings.load();
-  WiFi.mode(WIFI_STA);  // "station" = a normal Wi-Fi client
-  WiFi.setAutoReconnect(true);
+  prepareWifi();
 
   if (!hasSavedWifi()) {
     openWifiSetup("Wi-Fi setup");
   } else {
     // Connect with the saved network in the background; the status page
-    // updates itself once it's connected.
-    WiFi.begin();
+    // updates itself once it's connected. Any mesh node with that name is fine.
+    connectSavedWifi();
     pages.redraw();
   }
 
@@ -163,6 +166,7 @@ void loop() {
       break;
   }
 
+  maintainWifi();
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
   // One HTTPS download at a time. Weather first, then the WDGWars stats.

@@ -145,31 +145,40 @@ void drawFog(TFT_eSprite& s) {
   s.drawWideLine(10, 82, 62, 82, 5, CLOUD_MID, theme::BG);
 }
 
+// The sun is only drawn for clear and partly cloudy. A sun peeking past a
+// cloud or some rain looks like a break in the clouds. The moon is drawn for
+// every icon at night, so the phase stays visible behind the weather.
+void drawSkyLayer(TFT_eSprite& s, IconKind kind, bool night, float phase, SkyPos pos) {
+  if (night || kind == IconKind::Clear || kind == IconKind::PartlyCloudy) {
+    drawSky(s, night, phase, pos);
+  }
+}
+
 void drawIcon(TFT_eSprite& s, IconKind kind, bool night, float phase) {
   switch (kind) {
     case IconKind::Clear:
-      drawSky(s, night, phase, SkyPos::Big);
+      drawSkyLayer(s, kind, night, phase, SkyPos::Big);
       break;
     case IconKind::PartlyCloudy:
-      drawSky(s, night, phase, SkyPos::Normal);
+      drawSkyLayer(s, kind, night, phase, SkyPos::Normal);
       drawCloud(s, 34, 46, 0.95f, CLOUD_LIGHT);
       break;
     case IconKind::Cloudy:
-      drawSky(s, night, phase, SkyPos::Normal);
+      drawSkyLayer(s, kind, night, phase, SkyPos::Normal);
       drawCloud(s, 22, 34, 1.15f, CLOUD_LIGHT);
       break;
     case IconKind::Overcast:
-      drawSky(s, night, phase, SkyPos::Corner);
+      drawSkyLayer(s, kind, night, phase, SkyPos::Corner);
       drawCloud(s, 40, 26, 0.8f, CLOUD_DARK);
       drawCloud(s, 24, 42, 1.05f, CLOUD_MID);
       break;
     case IconKind::Fog:
-      drawSky(s, night, phase, SkyPos::Normal);
+      drawSkyLayer(s, kind, night, phase, SkyPos::Normal);
       drawFog(s);
       break;
     default: {
       // Everything that falls from a cloud.
-      drawSky(s, night, phase, SkyPos::Corner);
+      drawSkyLayer(s, kind, night, phase, SkyPos::Corner);
       const bool dark = kind == IconKind::HeavyRain || kind == IconKind::Thunder;
       drawCloud(s, 30, 34, 0.98f, dark ? CLOUD_DARK : CLOUD_MID);
 
