@@ -1,6 +1,6 @@
 # CYDesk plan
 
-A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, no PSRAM).
+A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S028, 240×320, ILI9341) is the one this was built on. The 3.5" ESP32-3248S035R (320×480, ST7796, resistive touch) is a second build, `pio run -e cyd35`. The capacitive 3.5" (ending in C) and the 4" boards are not supported. Landscape layout anchors the weather block to the bottom-right, so the 2.8" positions stay as approved.
 
 ## Pages (tap anywhere to go to the next one; it wraps around)
 
@@ -32,15 +32,11 @@ A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, 
 2. **Hourly** (`hourly_page.cpp`): the next 12 hours as 6×2 tiles. Each tile is the hour
    (cyan when it is the current hour), a 40 px icon, the temperature and the chance of rain.
    Night icons use today's moon phase. "Weather by WeatherAPI.com" sits along the bottom.
-3. **Badge** (`badge_page.cpp`): with a WDGWars key saved, the page draws that account's stats
-   (handle, gang, total, WiFi, BLE, aircraft, mesh, badge count, today and the last 7 days)
-   from a read-only `GET /api/me`. The key is stored like the weather key and is never printed.
-   The board does not upload anything. Without a key, the page is one picture from whatever the
-   user pasted: an image embed (`<img src="...">`) or a bare image address. SVG, PNG, GIF, WebP
-   and JPEG all count. wsrv.nl fits it inside the 320×240 screen (`fit=inside`, aspect kept,
-   nothing cropped) and the picture is centered. Refreshes every 10 minutes (stats: 15). A failed
-   refresh keeps the last result and marks it stale. Nothing saved: "No badge yet". Script widgets
-   and web pages have no picture to fetch; the settings page says so and keeps the previous badge.
+3. **Badge** (`badge_page.cpp`): the page draws one WDGWars account's stats (handle, gang, total,
+   WiFi, BLE, aircraft, mesh, badge count, today and the last 7 days) from a read-only
+   `GET /api/me`. The key is stored like the weather key and is never printed. The board does not
+   upload anything. Refreshes every 15 minutes. A failed refresh keeps the last result and marks
+   it stale. Nothing saved: "No WDGWars key yet". A picture badge can come back later (step 10).
 4. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
 
 ## Desk pet
@@ -68,7 +64,7 @@ Holding a finger on the screen for about 5 seconds reopens the Wi-Fi portal.
    *Why it's kept this small:* the iPhone shows this page in a mini-browser that closes, and
    leaves the network, as soon as you switch apps. So it must never need copying and pasting.
 2. **Settings page** (`settings_web.cpp`): served by the board on the home network at
-   `http://cydesk.local` (or its IP). It holds the name, ZIP code, WeatherAPI key, badge HTML,
+   `http://cydesk.local` (or its IP). It holds the name, ZIP code, WeatherAPI key, WDGWars key,
    °F or °C, and the 12/24-hour clock (later also the desk pet). While anything is missing, the screen shows a QR code that opens the page. The QR
    code uses the IP address, because `.local` lookups can take about 5 seconds on Macs (the board
    doesn't answer the IPv6 address lookup).
@@ -87,10 +83,8 @@ browser or printed to the serial log. Nothing private is kept in the repo.
     offset, so daylight saving switches over automatically.
   - One `forecast.json?days=2` request every 15 minutes covers current conditions, sunrise and
     sunset for today and tomorrow, and 48 hourly forecasts (rain chance = max of rain and snow).
-- **Badge rendering**: wsrv.nl turns whatever image the embed points at into one baseline JPEG
-  (`output=jpg`, no progressive). The board stores that JPEG in RAM (capped at 48 KB) and draws
-  it with TJpg_Decoder. Animated badges become a single frame. The fetch runs only when the
-  weather fetch isn't using the HTTPS buffer.
+- **WDGWars**: one read-only `GET https://wdgwars.pl/api/me` every 15 minutes, after the weather
+  fetch, so only one HTTPS download runs at a time. The key goes in a header and is never printed.
 
 ## Build steps (each one ends with something visible on the screen, then a commit)
 
@@ -102,8 +96,9 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 5b. [x] Desk pet: fox / raccoon / owl / none, reactions, settings (Off / Idle / Reacts + animal)
 6. [x] Moon phase with the weather layers drawn on top
 7. [x] Hourly page
-8. [ ] Badge page: any image embed → wsrv.nl → TJpg_Decoder
+8. [ ] Badge page: WDGWars stats from a saved key
 9. [ ] Polish: offline/stale markers, memory check, fallbacks, optional 4-digit code for the settings page, Wi-Fi portal: the page is slow to pop up after joining DeskBuddy-Setup (the phone's connectivity checks hit "request handler not found"; try answering them directly or pre-scanning networks before opening the access point)
+10. [ ] Later: picture badge again. An image embed or a bare image address, fitted through wsrv.nl and drawn with TJpg_Decoder. Shown when no WDGWars key is saved. Taken out so the badge page is WDGWars only for now.
 
 ## Look
 

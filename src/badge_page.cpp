@@ -2,7 +2,6 @@
 
 #include <WiFi.h>
 
-#include "badge_service.h"
 #include "fonts.h"
 #include "theme.h"
 #include "wdgwars_service.h"
@@ -47,55 +46,11 @@ String withCommas(int32_t n) {
   return out;
 }
 
-// "stale" sits in the navy margin. A picture that fills the screen gets a
-// small label in the corner instead of covering the middle of the badge.
-void drawStale(TFT_eSPI& tft, int imgY, int imgH) {
-  const int topGap = imgY;
-  const int bottomGap = tft.height() - (imgY + imgH);
-  fonts::use(tft, fonts::Id::Tiny);
-  tft.setTextColor(theme::MUTED, theme::BG);
-  if (bottomGap >= 16) {
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("stale", tft.width() / 2, imgY + imgH + bottomGap / 2);
-  } else if (topGap >= 16) {
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("stale", tft.width() / 2, topGap / 2);
-  } else {
-    tft.fillRect(tft.width() - 52, tft.height() - 18, 52, 18, theme::BG);
-    tft.setTextDatum(BR_DATUM);
-    tft.drawString("stale", tft.width() - 4, tft.height() - 2);
-  }
-}
-
-void drawImage(TFT_eSPI& tft, const Settings& settings) {
-  if (settings.badgeUrl.isEmpty()) {
-    centerMessage(tft, "No badge yet", "Add one on the settings page", theme::TEXT);
-    return;
-  }
-
-  int x = 0, y = 0, w = 0, h = 0;
-  if (badge::hasImage()) {
-    if (!badge::paint(tft, x, y, w, h)) {
-      centerMessage(tft, "Couldn't read the badge image", nullptr, theme::PINK);
-      return;
-    }
-    if (badge::stale()) drawStale(tft, y, h);
-    return;
-  }
-
-  if (badge::lastError().length()) {
-    centerMessage(tft, badge::lastError().c_str(), nullptr, theme::PINK);
-    return;
-  }
-  if (WiFi.status() != WL_CONNECTED) {
-    centerMessage(tft, "Waiting for Wi-Fi", nullptr, theme::MUTED);
-    return;
-  }
-  centerMessage(tft, "Loading badge...", nullptr, theme::MUTED);
-}
-
 // Same positions as local/previews/wdgwars_preview.py.
 void drawStats(TFT_eSPI& tft) {
+  // The 2.8" screen is 240 px tall. A taller screen drops this block toward
+  // the middle so it doesn't sit in a band under the name.
+  const int dy = tft.height() <= 240 ? 0 : (tft.height() - 240) / 2;
   const wdg::Stats& stats = wdg::current();
   if (!stats.ok) {
     if (wdg::lastError().length()) {
@@ -135,12 +90,12 @@ void drawStats(TFT_eSPI& tft) {
   fonts::use(tft, fonts::Id::Clock);
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(theme::TEXT, theme::BG);
-  tft.drawString(withCommas(stats.total), tft.width() / 2, 104);
+  tft.drawString(withCommas(stats.total), tft.width() / 2, 104 + dy);
 
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TC_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString("total", tft.width() / 2, 134);
+  tft.drawString("total", tft.width() / 2, 134 + dy);
 
   const int32_t values[] = {stats.wifi, stats.ble, stats.aircraft, stats.mesh};
   const char* labels[] = {"WiFi", "BLE", "Air", "Mesh"};
@@ -149,10 +104,10 @@ void drawStats(TFT_eSPI& tft) {
     const int cx = colW * i + colW / 2;
     fonts::use(tft, fonts::Id::Medium);
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(withCommas(values[i]), cx, 158);
+    tft.drawString(withCommas(values[i]), cx, 158 + dy);
     fonts::use(tft, fonts::Id::Tiny);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(labels[i], cx, 184);
+    tft.drawString(labels[i], cx, 184 + dy);
   }
 
   if (stats.haveRecent) {
@@ -166,16 +121,18 @@ void drawStats(TFT_eSPI& tft) {
 }  // namespace
 
 uint32_t BadgePage::signature() const {
-  // The top bit keeps a stats screen from matching a picture screen by chance.
-  if (settings_.wdgKey.length()) return 0x80000000u | wdg::generation();
-  return badge::generation();
+  if (!settings_.wdgKey.length()) return 0;
+  return 0x80000000u | wdg::generation();
 }
 
 void BadgePage::draw(TFT_eSPI& tft) {
   shown_ = signature();
   tft.fillScreen(theme::BG);
-  if (settings_.wdgKey.length()) drawStats(tft);
-  else drawImage(tft, settings_);
+  if (!settings_.wdgKey.length()) {
+    centerMessage(tft, "No WDGWars key yet", "Add one on the settings page", theme::TEXT);
+    return;
+  }
+  drawStats(tft);
 }
 
 void BadgePage::update(TFT_eSPI& tft) {

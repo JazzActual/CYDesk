@@ -9,6 +9,8 @@
 #pragma once
 #include <Arduino.h>
 
+class TFT_eSPI;
+
 enum class TouchEvent { None, Tap, LongPress };
 
 class TouchInput {
@@ -16,7 +18,9 @@ class TouchInput {
   static constexpr uint32_t LONG_PRESS_MS = 5000;
   static constexpr uint32_t MAX_TAP_MS = 800;
 
-  void begin();
+  // `display` is the screen already started with tft.init(). The 3.5" board
+  // reads the touch chip through that same connection.
+  void begin(TFT_eSPI& display);
 
   // Call every loop(). Returns at most one event per press.
   TouchEvent poll();
@@ -35,4 +39,7 @@ class TouchInput {
   bool longFired_ = false;
   uint32_t downAt_ = 0;     // when the current press started
   uint32_t lastTouch_ = 0;  // last time we saw the screen pressed
+  TFT_eSPI* display_ = nullptr;
+
+  bool screenPressed();
 };

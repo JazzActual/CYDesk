@@ -1,5 +1,4 @@
-// The Badge page. With a WDGWars key saved, it draws that account's stats.
-// Otherwise it draws one picture from an image embed, centered.
+// The Badge page. It draws the saved WDGWars account's stats.
 //
 //   ┌──────────────────────────────────────┐
 //   │ handle                         gang  │
@@ -11,7 +10,7 @@
 //   │        today 100 · week 900          │
 //   └──────────────────────────────────────┘
 //
-// Fetching happens in wdgwars_service / badge_service. This page only draws.
+// Fetching happens in wdgwars_service. This page only draws.
 #pragma once
 #include "pages.h"
 #include "settings.h"

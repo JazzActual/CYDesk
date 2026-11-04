@@ -11,29 +11,48 @@
 #include "weather_service.h"
 
 namespace {
-// Layout (landscape, 320 x 240).
+// Top block is the same on every screen. The weather cluster is measured from
+// the bottom-right, so a 320×240 screen keeps the approved positions and a
+// 480×320 screen (the 3.5" board, landscape) uses the extra room.
 constexpr int MARGIN = 14;
 constexpr int GREETING_Y = 12;      // top of the greeting (24 px font)
 constexpr int DATE_Y = 44;          // top of the date (14 px font), under the greeting
 constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
 constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
-// Sunrise/sunset above the weather block, inset from the right edge.
-constexpr int SUN_COL_X[2] = {238, 288};  // column centres
-// 3 px above the first try: the times were clipping the ° and the weather icon
-// was chopping off the bottoms of the times.
-constexpr int SUN_ICON_Y = 119;
-constexpr int SUN_TIME_Y = 141;
-constexpr int SUN_AREA_X = 210;           // left edge of the area cleared for them
+constexpr int ICON = 72;
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
 
-// Weather, bottom right: 72 px icon, temperature and humidity to its left.
-constexpr int ICON_X = 240, ICON_Y = 158;
-constexpr int WEATHER_TEXT_RIGHT = ICON_X - 8;  // right edge of temperature/humidity
-constexpr int WEATHER_TEXT_LEFT = 100;          // left edge of the area they may use
-constexpr int WEATHER_CLEAR_Y = 162;            // below the sun times; weather redraw starts here
-constexpr int TEMP_BASELINE = 188;
-constexpr int PRECIP_Y = 197;                   // top of the rain-chance line
-constexpr int HUMIDITY_Y = 217;                 // top of the humidity line
+struct Place {
+  int sunX[2];
+  int sunIconY, sunTimeY, sunAreaX;
+  int iconX, iconY;
+  int textRight, textLeft, clearY;
+  int tempBaseline, precipY, humidityY;
+};
+
+// On 320×240 these are the positions that were checked on the board:
+// icon (240, 158), sun columns 238 and 288, times at y=141.
+const Place& place(TFT_eSPI& tft) {
+  static Place p;
+  static int w = -1, h = -1;
+  if (w == tft.width() && h == tft.height()) return p;
+  w = tft.width();
+  h = tft.height();
+  p.iconX = w - ICON - 8;
+  p.iconY = h - ICON - 10;
+  p.textRight = p.iconX - 8;
+  p.textLeft = 100;
+  p.clearY = p.iconY + 4;
+  p.tempBaseline = p.iconY + 30;
+  p.precipY = p.iconY + 39;
+  p.humidityY = p.iconY + 59;
+  p.sunX[1] = w - 32;
+  p.sunX[0] = p.sunX[1] - 50;
+  p.sunAreaX = w - 110;
+  p.sunIconY = p.iconY - 39;
+  p.sunTimeY = p.sunIconY + 22;
+  return p;
+}
 
 // Phase for the icon: today's real moon, or a full moon if we don't have one yet.
 float moonPhaseOf(const WeatherReport& w) {
@@ -202,7 +221,8 @@ String HomePage::sunSignature() const {
 
 void HomePage::drawSunEvents(TFT_eSPI& tft) {
   shownSun_ = sunSignature();
-  tft.fillRect(SUN_AREA_X, SUN_ICON_Y - 2, tft.width() - SUN_AREA_X, SUN_TIME_Y + 20 - SUN_ICON_Y,
+  const Place& p = place(tft);
+  tft.fillRect(p.sunAreaX, p.sunIconY - 2, tft.width() - p.sunAreaX, p.sunTimeY + 20 - p.sunIconY,
                theme::BG);
   time_t t[2];
   bool up[2];
@@ -211,10 +231,10 @@ void HomePage::drawSunEvents(TFT_eSPI& tft) {
   fonts::use(tft, fonts::Id::Small);
   tft.setTextDatum(TC_DATUM);
   for (int i = 0; i < 2; i++) {
-    drawSunEventIcon(tft, SUN_COL_X[i], SUN_ICON_Y, up[i]);
+    drawSunEventIcon(tft, p.sunX[i], p.sunIconY, up[i]);
     // The one that's already happened is greyed out; the next one is bright.
     tft.setTextColor(i == 0 ? theme::MUTED : theme::TEXT, theme::BG);
-    tft.drawString(formatClock(t[i], settings_.clock24h), SUN_COL_X[i], SUN_TIME_Y);
+    tft.drawString(formatClock(t[i], settings_.clock24h), p.sunX[i], p.sunTimeY);
   }
 }
 
@@ -323,17 +343,17 @@ void HomePage::drawTime(TFT_eSPI& tft) {
 
 void HomePage::drawWeather(TFT_eSPI& tft) {
   shownWeather_ = weatherSignature();
+  const Place& p = place(tft);
   // Clear the text area left of the icon (below the clock) and the icon itself.
-  tft.fillRect(WEATHER_TEXT_LEFT, WEATHER_CLEAR_Y, ICON_X - WEATHER_TEXT_LEFT,
-               tft.height() - WEATHER_CLEAR_Y, theme::BG);
-  tft.fillRect(ICON_X, ICON_Y - 4, tft.width() - ICON_X, tft.height() - ICON_Y + 4, theme::BG);
+  tft.fillRect(p.textLeft, p.clearY, p.iconX - p.textLeft, tft.height() - p.clearY, theme::BG);
+  tft.fillRect(p.iconX, p.iconY - 4, tft.width() - p.iconX, tft.height() - p.iconY + 4, theme::BG);
 
   const WeatherReport& w = weather::current();
   if (demoStep_ >= 0) {
-    drawWeatherIcon(tft, ICON_X, ICON_Y, static_cast<IconKind>(demoStep_ / 2),
+    drawWeatherIcon(tft, p.iconX, p.iconY, static_cast<IconKind>(demoStep_ / 2),
                     demoStep_ % 2 == 1, moonPhaseOf(w));
   } else if (w.ok) {
-    drawWeatherIcon(tft, ICON_X, ICON_Y, iconForCode(w.conditionCode), !w.isDay,
+    drawWeatherIcon(tft, p.iconX, p.iconY, iconForCode(w.conditionCode), !w.isDay,
                     moonPhaseOf(w));
   }
 
@@ -342,14 +362,14 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
   if (!w.ok) {
     // No weather yet: just a placeholder temperature.
     tft.setTextColor(theme::PANEL, theme::BG);
-    tft.drawString("--°", WEATHER_TEXT_RIGHT, TEMP_BASELINE);
+    tft.drawString("--°", p.textRight, p.tempBaseline);
     return;
   }
 
   // Temperature, rounded, e.g. "64°".
   const float temp = settings_.fahrenheit ? w.tempF : w.tempC;
   tft.setTextColor(theme::TEXT, theme::BG);
-  tft.drawString(String(lroundf(temp)) + "°", WEATHER_TEXT_RIGHT, TEMP_BASELINE);
+  tft.drawString(String(lroundf(temp)) + "°", p.textRight, p.tempBaseline);
 
   // Chance of rain/snow this hour: a small pink umbrella, then e.g. "60%".
   const int precip = w.precipChanceAt(time(nullptr));
@@ -358,8 +378,8 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
     const String text = String(precip) + "%";
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(text, WEATHER_TEXT_RIGHT, PRECIP_Y);
-    drawUmbrella(tft, WEATHER_TEXT_RIGHT - tft.textWidth(text) - 17, PRECIP_Y + 2, theme::PINK);
+    tft.drawString(text, p.textRight, p.precipY);
+    drawUmbrella(tft, p.textRight - tft.textWidth(text) - 17, p.precipY + 2, theme::PINK);
   }
 
   // Relative humidity, smaller and muted: e.g. "90%RH".
@@ -367,6 +387,6 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
     fonts::use(tft, fonts::Id::Tiny);
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(String(w.humidity) + "%RH", WEATHER_TEXT_RIGHT, HUMIDITY_Y);
+    tft.drawString(String(w.humidity) + "%RH", p.textRight, p.humidityY);
   }
 }

@@ -13,7 +13,9 @@ constexpr int CANVAS = 26;
 constexpr int SCALE = 3;
 constexpr int SIZE = CANVAS * SCALE;  // 78 px on screen
 constexpr int PET_X = 8;
-constexpr int PET_Y = 240 - SIZE - 4;
+
+// Bottom-left. On a 240 px tall screen this is y=158, the same as before.
+int petY(TFT_eSPI& tft) { return tft.height() - SIZE - 4; }
 constexpr int ANIMAL_X = 1, ANIMAL_Y = 6;  // 20×20 animal on the canvas
 
 constexpr uint16_t SHADES = theme::rgb(16, 16, 20);
@@ -240,7 +242,7 @@ void paint(TFT_eSPI& tft, const Settings& s, Look look, bool shut) {
     drawZ(sprite, 21, 2, 4);
   }
 
-  sprite.pushSprite(PET_X, PET_Y);
+  sprite.pushSprite(PET_X, petY(tft));
   sprite.deleteSprite();
 }
 
@@ -262,7 +264,7 @@ void draw(TFT_eSPI& tft, const Settings& settings) {
 void update(TFT_eSPI& tft, const Settings& settings) {
   if (!visible(settings)) {
     if (strcmp(shown, "off") != 0) {
-      tft.fillRect(PET_X, PET_Y, SIZE, SIZE, theme::BG);
+      tft.fillRect(PET_X, petY(tft), SIZE, SIZE, theme::BG);
       strncpy(shown, "off", sizeof(shown));
     }
     return;

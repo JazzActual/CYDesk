@@ -1,9 +1,9 @@
 // The settings page: a small web page served by the board itself on the home
 // network, at http://cydesk.local (or its IP address). Open it on a phone or
-// computer to set the name, ZIP, WeatherAPI key, badge and units.
+// computer to set the name, ZIP, WeatherAPI key, WDGWars key and units.
 //
 // Because the phone stays on the normal home Wi-Fi, you can switch apps to
-// copy/paste the key or badge HTML without losing anything.
+// copy/paste a key without losing anything.
 //
 // Note: anyone on the same home network can open this page. The API key is
 // never sent back to the browser, only "saved" / "not set".

@@ -13,8 +13,6 @@ const String* placeError = nullptr;
 bool running = false;
 bool changed = false;
 bool iconTestRequested = false;
-// Shown once after a save when the badge paste wasn't a picture.
-String badgeNote;
 
 // Makes user text safe to put inside HTML (so a name like <b> can't break the page).
 String escapeHtml(const String& in) {
@@ -43,9 +41,8 @@ const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
  h1{color:#00e5ff;font-size:22px;margin:0 0 4px}
  .sub{color:#5d7b8c;font-size:13px;margin-bottom:18px}
  label{display:block;color:#5d7b8c;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px}
- input[type=text],input[type=password],textarea{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
+ input[type=text],input[type=password]{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
    border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px}
- textarea{height:90px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
  .units label{display:inline;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin-right:18px}
  .hint{color:#5d7b8c;font-size:12px;margin-top:4px}
  button{margin-top:22px;width:100%;background:#00e5ff;color:#0a1018;border:0;border-radius:8px;padding:12px;font-size:17px;font-weight:600}
@@ -71,9 +68,6 @@ void handleRoot() {
   // Status box
   html += "<div class='status'>";
   if (justSaved) html += "<div class='ok'>&#10003; Saved</div>";
-  if (justSaved && badgeNote.length()) {
-    html += "<div class='bad'>" + escapeHtml(badgeNote) + "</div>";
-  }
   html += "Wi-Fi: <span class='ok'>" + escapeHtml(WiFi.SSID()) + "</span><br>Weather: ";
   if (s.placeLabel.length()) {
     html += "<span class='ok'>Found: " + escapeHtml(s.placeLabel) + "</span>";
@@ -104,17 +98,11 @@ void handleRoot() {
   html += "'><div class='hint'>Free at <a href='https://www.weatherapi.com/signup.aspx'>weatherapi.com</a>"
           " &rarr; dashboard &rarr; API key.</div>";
 
-  html += "<label for='badge'>Badge</label>"
-          "<textarea id='badge' name='badge'>" + escapeHtml(s.badgeUrl) + "</textarea>"
-          "<div class='hint'>Paste an image embed or an image address. The picture is shown on the "
-          "badge page. Script widgets and web pages can't be shown. Leave empty for no badge.</div>";
-
-  // The key is never put back into the page. A saved key replaces the picture
-  // with the stats screen; the checkbox is how you go back to the picture.
+  // The key is never put back into the page. The checkbox clears a saved key.
   html += "<label for='wdgkey'>WDGWars key</label>"
           "<input type='password' id='wdgkey' name='wdgkey' maxlength='80' autocomplete='off' placeholder='";
   html += s.wdgKey.length() ? "saved &mdash; leave blank to keep it" : "paste a key for this desk";
-  html += "'><div class='hint'>Shows your WDGWars stats on the badge page instead of the picture. "
+  html += "'><div class='hint'>Shows this desk's WDGWars stats on the badge page. "
           "Make a key on your WDGWars profile just for this desk. Leave blank to keep the saved key.</div>";
   if (s.wdgKey.length()) {
     html += "<div class='hint'><input type='checkbox' name='wdgclear' value='1'> "
@@ -176,14 +164,6 @@ void handleSave() {
   s.weatherKey = key;
   s.name = server.arg("name");
   s.name.trim();
-  // A paste that isn't a picture leaves the saved badge alone and explains why.
-  const BadgeExtract badge = extractBadge(server.arg("badge"));
-  if (badge.error.length()) {
-    badgeNote = badge.error;
-  } else {
-    badgeNote = "";
-    s.badgeUrl = badge.url;
-  }
   String wdg = server.arg("wdgkey");
   wdg.trim();
   if (wdg.length()) s.wdgKey = wdg;
@@ -202,13 +182,11 @@ void handleSave() {
   s.save();
   changed = true;
 
-  // Never print the key itself, only whether one is saved.
   // Never print either key, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s badge=%s wdg=%s pet=%u mode=%u\n",
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s pet=%u mode=%u\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
                 s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
-                s.badgeUrl.length() ? "set" : "none", s.wdgKey.length() ? "set" : "none",
-                s.petAnimal, s.petMode);
+                s.wdgKey.length() ? "set" : "none", s.petAnimal, s.petMode);
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

@@ -3,21 +3,20 @@
 // Pages (tap anywhere for the next one):
 //   1. Home      greeting, clock, date, weather icon, temperature, humidity
 //   2. Hourly    next 12 hours: hour, icon, temperature, rain chance
-//   3. Badge     WDGWars stats when a key is saved, otherwise one picture
+//   3. Badge     WDGWars stats
 //   4. Status    settings / Wi-Fi / weather diagnostics
 //
 // Setup happens in two parts:
 //   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (DeskBuddy-Setup).
 //      Holding a finger on the screen for 5 seconds reopens it.
 //   2. On the home Wi-Fi, the board serves a settings page at
-//      http://cydesk.local for name, ZIP, WeatherAPI key, badge and units.
+//      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key and units.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 
 #include "badge_page.h"
-#include "badge_service.h"
 #include "fonts.h"
 #include "home_page.h"
 #include "hourly_page.h"
@@ -86,8 +85,7 @@ void serviceSettingsPage() {
   settings_web::handle();
   if (settings_web::takeChanged()) {
     weather::refreshSoon();  // ZIP/key/units may have changed
-    badge::prepare(settings);  // drop the old picture before the redraw if the address changed
-    wdg::prepare(settings);    // drop the previous account before the redraw if the key changed
+    wdg::prepare(settings);   // drop the previous account before the redraw if the key changed
     pages.redraw();
   }
   if (settings_web::takeIconTestRequest()) {
@@ -122,11 +120,15 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk: WDGWars stats");
+#if defined(BOARD_CYD35)
+  Serial.println("\nCYDesk: 3.5 inch");
+#else
+  Serial.println("\nCYDesk: 2.8 inch");
+#endif
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
-  touch.begin();
+  touch.begin(tft);
 
   pages.add(&homePage);
   pages.add(&hourlyPage);
@@ -163,11 +165,9 @@ void loop() {
 
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
-  // One HTTPS download at a time. Weather first, then either the badge picture
-  // or the WDGWars stats. The picture fetch steps aside while a WDGWars key is set.
+  // One HTTPS download at a time. Weather first, then the WDGWars stats.
   if (networkReady) weather::update(settings);
   if (weather::takeChanged()) pages.dataChanged();
-  if (networkReady) badge::update(settings);
   if (networkReady) wdg::update(settings);
   updateHoldBar();
   pages.update();

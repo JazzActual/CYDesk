@@ -13,8 +13,7 @@ struct Settings {
   String name;             // used in the greeting: "Morning, <name>!"
   String zip;              // weather location (US ZIP / postcode), e.g. "60601"
   String weatherKey;       // the user's own WeatherAPI.com API key
-  String badgeUrl;         // image address taken from the pasted badge HTML
-  String wdgKey;           // WDGWars API key; when set, the badge page shows stats
+  String wdgKey;           // WDGWars API key; the badge page shows that account's stats
   bool fahrenheit = true;  // false = Celsius
   bool clock24h = false;   // true = "13:07", false = "1:07 PM"
 
@@ -35,16 +34,3 @@ struct Settings {
     return name.length() > 0 && zip.length() > 0 && weatherKey.length() > 0;
   }
 };
-
-// Result of reading the badge box. A blank box gives an empty url and no error.
-// `error` is set when the paste can't be shown (a script widget, a web page,
-// or an address that isn't http/https).
-struct BadgeExtract {
-  String url;
-  String error;
-};
-
-// Pulls the image address out of a badge embed. Accepts a bare image URL, or
-// HTML that contains an <img src="...">. The first image wins. Script and
-// iframe embeds have no picture for the screen to show, so those set `error`.
-BadgeExtract extractBadge(const String& htmlOrUrl);
