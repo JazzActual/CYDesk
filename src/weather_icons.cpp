@@ -228,25 +228,36 @@ const char* iconName(IconKind kind) {
   return (i >= 0 && i < static_cast<int>(IconKind::Count)) ? names[i] : "?";
 }
 
-void drawWeatherIcon(TFT_eSPI& tft, int x, int y, IconKind kind, bool night, float moonPhase) {
+void drawWeatherIcon(TFT_eSPI& tft, int x, int y, IconKind kind, bool night, float moonPhase,
+                     int size) {
+  if (size <= 0) size = ICON_SIZE;
   TFT_eSprite sprite(&tft);
-  // Drawn at the design size, then nearest-neighbour scaled to ICON_SIZE so the
-  // composition stays the same when we shrink the on-screen icon.
+  // Drawn at the design size, then nearest-neighbour scaled so a 40 px tile
+  // icon is the same picture as the 72 px one on Home, just smaller.
   if (!sprite.createSprite(ICON_DESIGN, ICON_DESIGN)) {
     Serial.println("[icons] not enough memory for the icon sprite");
     return;
   }
   sprite.fillSprite(theme::BG);
   drawIcon(sprite, kind, night, moonPhase);
-  if (ICON_SIZE == ICON_DESIGN) {
-    sprite.pushSprite(x, y);
-  } else {
-    for (int dy = 0; dy < ICON_SIZE; dy++) {
-      const int sy = dy * ICON_DESIGN / ICON_SIZE;
-      for (int dx = 0; dx < ICON_SIZE; dx++) {
-        tft.drawPixel(x + dx, y + dy, sprite.readPixel(dx * ICON_DESIGN / ICON_SIZE, sy));
+
+  TFT_eSprite scaled(&tft);
+  TFT_eSprite* out = &sprite;
+  if (size != ICON_DESIGN) {
+    if (!scaled.createSprite(size, size)) {
+      Serial.println("[icons] not enough memory to scale the icon");
+      sprite.deleteSprite();
+      return;
+    }
+    for (int dy = 0; dy < size; dy++) {
+      const int sy = dy * ICON_DESIGN / size;
+      for (int dx = 0; dx < size; dx++) {
+        scaled.drawPixel(dx, dy, sprite.readPixel(dx * ICON_DESIGN / size, sy));
       }
     }
+    sprite.deleteSprite();
+    out = &scaled;
   }
-  sprite.deleteSprite();
+  out->pushSprite(x, y);
+  out->deleteSprite();
 }

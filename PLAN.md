@@ -29,8 +29,9 @@ A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, 
      rain, snow, sleet, fog and lightning layers on top. `/icons` on
      the settings server steps through every icon, day and night.
    - **Desk pet, bottom left (see below).**
-2. **Hourly**: the next 12 hours as 6×2 tiles: hour, small icon, temperature, chance of rain.
-   Credit "Weather by WeatherAPI.com" here.
+2. **Hourly** (`hourly_page.cpp`): the next 12 hours as 6×2 tiles. Each tile is the hour
+   (cyan when it is the current hour), a 40 px icon, the temperature and the chance of rain.
+   Night icons use today's moon phase. "Weather by WeatherAPI.com" sits along the bottom.
 3. **Badge**: one user-supplied HTML image badge (e.g. the WDGWars card). The board takes the
    `src` address out of the snippet and fetches it through wsrv.nl as a 320-pixel-wide JPEG,
    refreshing every 10 minutes, with a "stale" marker when a fetch fails.
@@ -93,7 +94,7 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 5. [x] Weather on Home: icon set (+ /icons test), temperature, rain chance, %RH, sunrise/sunset
 5b. [x] Desk pet: fox / raccoon / owl / none, reactions, settings (Off / Idle / Reacts + animal)
 6. [x] Moon phase with the weather layers drawn on top
-7. [ ] Hourly page
+7. [x] Hourly page
 8. [ ] Badge page (wsrv.nl → TJpg_Decoder)
 9. [ ] Polish: offline/stale markers, memory check, fallbacks, optional 4-digit code for the settings page, Wi-Fi portal: the page is slow to pop up after joining DeskBuddy-Setup (the phone's connectivity checks hit "request handler not found"; try answering them directly or pre-scanning networks before opening the access point)
 

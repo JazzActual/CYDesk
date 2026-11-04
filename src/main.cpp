@@ -2,7 +2,7 @@
 //
 // Pages (tap anywhere for the next one):
 //   1. Home      greeting, clock, date, weather icon, temperature, humidity
-//   2. Hourly    placeholder until step 7
+//   2. Hourly    next 12 hours: hour, icon, temperature, rain chance
 //   3. Badge     placeholder until step 8
 //   4. Status    settings / Wi-Fi / weather diagnostics
 //
@@ -24,6 +24,7 @@
 #include "theme.h"
 #include "fonts.h"
 #include "home_page.h"
+#include "hourly_page.h"
 #include "timekeeping.h"
 #include "touch.h"
 #include "weather_service.h"
@@ -42,7 +43,7 @@ Settings settings;
 
 // Pages, in tap order.
 HomePage homePage(settings);
-PlaceholderPage hourlyPage("Hourly", theme::PINK, 2, 4);
+HourlyPage hourlyPage(settings);
 PlaceholderPage badgePage("Badge", theme::TEXT, 3, 4);
 StatusPage statusPage(settings, weather::lastError());
 
@@ -116,7 +117,7 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk: desk pet");
+  Serial.println("\nCYDesk: hourly page");
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);

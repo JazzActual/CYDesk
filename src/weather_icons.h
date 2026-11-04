@@ -23,5 +23,7 @@ const char* iconName(IconKind kind);
 
 // Draws the icon with its top-left corner at (x, y).
 // moonPhase: 0 = new moon, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter.
-// Uses a temporary ICON_DESIGN×ICON_DESIGN sprite (~18 KB), then scales to ICON_SIZE.
-void drawWeatherIcon(TFT_eSPI& tft, int x, int y, IconKind kind, bool night, float moonPhase);
+// size: on-screen width and height. Home uses ICON_SIZE (72); the hourly tiles use 40.
+// Uses a temporary ICON_DESIGN×ICON_DESIGN sprite (~18 KB), then scales down.
+void drawWeatherIcon(TFT_eSPI& tft, int x, int y, IconKind kind, bool night, float moonPhase,
+                     int size = ICON_SIZE);
