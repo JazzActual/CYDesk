@@ -1,8 +1,8 @@
 // Pages: each screen (Home, Hourly, Badge) is a Page. The PageManager knows
 // which one is showing and moves to the next on a tap.
 //
-// A page only DRAWS. Fetching data (weather, badge) will happen in separate
-// background "services", so a page is already up to date when you tap to it.
+// A page only DRAWS. Fetching data (weather, badge) happens in separate
+// services, so a page is already up to date when you tap to it.
 #pragma once
 #include <TFT_eSPI.h>
 

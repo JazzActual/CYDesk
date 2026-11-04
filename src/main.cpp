@@ -1,9 +1,9 @@
-// CYDesk — Step 4: Home page with clock, date and greeting
+// CYDesk
 //
 // Pages (tap anywhere for the next one):
 //   1. Home      greeting, clock, date, weather icon, temperature, humidity
 //   2. Hourly    next 12 hours: hour, icon, temperature, rain chance
-//   3. Badge     placeholder until step 8
+//   3. Badge     WDGWars stats when a key is saved, otherwise one picture
 //   4. Status    settings / Wi-Fi / weather diagnostics
 //
 // Setup happens in two parts:
@@ -16,18 +16,21 @@
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 
+#include "badge_page.h"
+#include "badge_service.h"
+#include "fonts.h"
+#include "home_page.h"
+#include "hourly_page.h"
 #include "pages.h"
 #include "pins.h"
 #include "portal.h"
 #include "settings.h"
 #include "settings_web.h"
 #include "theme.h"
-#include "fonts.h"
-#include "home_page.h"
-#include "hourly_page.h"
 #include "timekeeping.h"
 #include "touch.h"
 #include "weather_service.h"
+#include "wdgwars_service.h"
 
 // Landscape. If everything comes out upside down, change this to 3.
 constexpr uint8_t SCREEN_ROTATION = 1;
@@ -44,7 +47,7 @@ Settings settings;
 // Pages, in tap order.
 HomePage homePage(settings);
 HourlyPage hourlyPage(settings);
-PlaceholderPage badgePage("Badge", theme::TEXT, 3, 4);
+BadgePage badgePage(settings);
 StatusPage statusPage(settings, weather::lastError());
 
 void ledsOff() {
@@ -83,6 +86,8 @@ void serviceSettingsPage() {
   settings_web::handle();
   if (settings_web::takeChanged()) {
     weather::refreshSoon();  // ZIP/key/units may have changed
+    badge::prepare(settings);  // drop the old picture before the redraw if the address changed
+    wdg::prepare(settings);    // drop the previous account before the redraw if the key changed
     pages.redraw();
   }
   if (settings_web::takeIconTestRequest()) {
@@ -117,7 +122,7 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk: hourly page");
+  Serial.println("\nCYDesk: WDGWars stats");
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
@@ -158,8 +163,12 @@ void loop() {
 
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
+  // One HTTPS download at a time. Weather first, then either the badge picture
+  // or the WDGWars stats. The picture fetch steps aside while a WDGWars key is set.
   if (networkReady) weather::update(settings);
   if (weather::takeChanged()) pages.dataChanged();
+  if (networkReady) badge::update(settings);
+  if (networkReady) wdg::update(settings);
   updateHoldBar();
   pages.update();
 }

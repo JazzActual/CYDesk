@@ -13,6 +13,8 @@ const String* placeError = nullptr;
 bool running = false;
 bool changed = false;
 bool iconTestRequested = false;
+// Shown once after a save when the badge paste wasn't a picture.
+String badgeNote;
 
 // Makes user text safe to put inside HTML (so a name like <b> can't break the page).
 String escapeHtml(const String& in) {
@@ -59,7 +61,7 @@ void handleRoot() {
   const bool checking = s.isComplete() && s.placeLabel.isEmpty() && placeError->isEmpty();
 
   String html;
-  html.reserve(5600);
+  html.reserve(7000);
   html += FPSTR(PAGE_HEAD);
   // While the board is still checking the ZIP/key, reload every 3 s to show the result.
   if (justSaved && checking) html += "<meta http-equiv='refresh' content='3;url=/?saved=1'>";
@@ -69,6 +71,9 @@ void handleRoot() {
   // Status box
   html += "<div class='status'>";
   if (justSaved) html += "<div class='ok'>&#10003; Saved</div>";
+  if (justSaved && badgeNote.length()) {
+    html += "<div class='bad'>" + escapeHtml(badgeNote) + "</div>";
+  }
   html += "Wi-Fi: <span class='ok'>" + escapeHtml(WiFi.SSID()) + "</span><br>Weather: ";
   if (s.placeLabel.length()) {
     html += "<span class='ok'>Found: " + escapeHtml(s.placeLabel) + "</span>";
@@ -99,9 +104,22 @@ void handleRoot() {
   html += "'><div class='hint'>Free at <a href='https://www.weatherapi.com/signup.aspx'>weatherapi.com</a>"
           " &rarr; dashboard &rarr; API key.</div>";
 
-  html += "<label for='badge'>Badge (paste the HTML embed code or an image URL)</label>"
+  html += "<label for='badge'>Badge</label>"
           "<textarea id='badge' name='badge'>" + escapeHtml(s.badgeUrl) + "</textarea>"
-          "<div class='hint'>Only the image address is kept. Leave empty for no badge.</div>";
+          "<div class='hint'>Paste an image embed or an image address. The picture is shown on the "
+          "badge page. Script widgets and web pages can't be shown. Leave empty for no badge.</div>";
+
+  // The key is never put back into the page. A saved key replaces the picture
+  // with the stats screen; the checkbox is how you go back to the picture.
+  html += "<label for='wdgkey'>WDGWars key</label>"
+          "<input type='password' id='wdgkey' name='wdgkey' maxlength='80' autocomplete='off' placeholder='";
+  html += s.wdgKey.length() ? "saved &mdash; leave blank to keep it" : "paste a key for this desk";
+  html += "'><div class='hint'>Shows your WDGWars stats on the badge page instead of the picture. "
+          "Make a key on your WDGWars profile just for this desk. Leave blank to keep the saved key.</div>";
+  if (s.wdgKey.length()) {
+    html += "<div class='hint'><input type='checkbox' name='wdgclear' value='1'> "
+            "Remove the saved WDGWars key</div>";
+  }
 
   html += "<label>Temperature units</label><div class='units'>";
   html += String("<label><input type='radio' name='units' value='F'") +
@@ -158,7 +176,18 @@ void handleSave() {
   s.weatherKey = key;
   s.name = server.arg("name");
   s.name.trim();
-  s.badgeUrl = extractImageUrl(server.arg("badge"));
+  // A paste that isn't a picture leaves the saved badge alone and explains why.
+  const BadgeExtract badge = extractBadge(server.arg("badge"));
+  if (badge.error.length()) {
+    badgeNote = badge.error;
+  } else {
+    badgeNote = "";
+    s.badgeUrl = badge.url;
+  }
+  String wdg = server.arg("wdgkey");
+  wdg.trim();
+  if (wdg.length()) s.wdgKey = wdg;
+  else if (server.hasArg("wdgclear")) s.wdgKey = "";
   s.fahrenheit = server.arg("units") != "C";
   s.clock24h = server.arg("clock") == "24";
   const String mode = server.arg("petmode");
@@ -174,10 +203,12 @@ void handleSave() {
   changed = true;
 
   // Never print the key itself, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s badge=%s pet=%u mode=%u\n",
+  // Never print either key, only whether one is saved.
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s badge=%s wdg=%s pet=%u mode=%u\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
                 s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
-                s.badgeUrl.length() ? "set" : "none", s.petAnimal, s.petMode);
+                s.badgeUrl.length() ? "set" : "none", s.wdgKey.length() ? "set" : "none",
+                s.petAnimal, s.petMode);
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.
