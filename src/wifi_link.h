@@ -23,3 +23,8 @@ void connectSavedWifi();
 
 // Call from loop(). If the link has been down for a while, try any node again.
 void maintainWifi();
+
+// True once the link has changed and then stayed quiet for a moment.
+// The screen should be redrawn: a Wi-Fi scan can flip the display mirror bit,
+// and the page may have been painted with the wrong font while the link moved.
+bool takeSettledWifiChange();

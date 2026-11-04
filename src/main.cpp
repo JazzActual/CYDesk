@@ -67,6 +67,7 @@ void openWifiSetup(const char* reason) {
   // forces station mode and would drop a connection the portal just made.
   holdWifiPolicy();
   if (!connected && hasSavedWifi()) connectSavedWifi();
+  tft.setRotation(SCREEN_ROTATION);
   pages.redraw();
 }
 
@@ -167,6 +168,13 @@ void loop() {
   }
 
   maintainWifi();
+  // A scan can leave the panel mirrored, and a reconnect redraws whatever
+  // page is up. Put the rotation back and paint the page again once the
+  // radio has been quiet for a moment.
+  if (takeSettledWifiChange()) {
+    tft.setRotation(SCREEN_ROTATION);
+    pages.redraw();
+  }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
   // One HTTPS download at a time. Weather first, then the WDGWars stats.

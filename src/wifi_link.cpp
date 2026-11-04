@@ -13,6 +13,10 @@ constexpr uint32_t RETRY_AFTER_DOWN_MS = 10000;
 constexpr uint32_t RETRY_GAP_MS = 20000;
 
 bool eventsHooked = false;
+// millis() of the last connect or drop. 0 means nothing new for the screen.
+volatile uint32_t wifiChangedAt = 0;
+// Let a burst of reconnect events finish before the screen is repainted.
+constexpr uint32_t WIFI_SETTLE_MS = 400;
 
 // The saved config can have a radio address and channel filled in after a
 // successful join. Clear both so the next connect may use any node.
@@ -35,8 +39,10 @@ void onWifiEvent(arduino_event_id_t event, arduino_event_info_t info) {
     // us to leave, 200 = its signal disappeared). Logged so the next report
     // says why, without the network name.
     Serial.printf("[wifi] disconnected, reason %u\n", info.wifi_sta_disconnected.reason);
+    wifiChangedAt = millis();
   } else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) {
     Serial.printf("[wifi] connected, rssi %d\n", WiFi.RSSI());
+    wifiChangedAt = millis();
   }
 }
 
@@ -90,4 +96,12 @@ void maintainWifi() {
   lastTry = now;
   Serial.println("[wifi] still offline, searching for any node of the saved network");
   connectSavedWifi();
+}
+
+bool takeSettledWifiChange() {
+  const uint32_t at = wifiChangedAt;
+  if (at == 0) return false;
+  if (millis() - at < WIFI_SETTLE_MS) return false;
+  if (wifiChangedAt == at) wifiChangedAt = 0;
+  return true;
 }

@@ -57,6 +57,10 @@ String fitText(TFT_eSPI& tft, String text, int maxWidth, uint8_t font) {
 // Shown when Wi-Fi works but name/ZIP/key are still missing: a QR code and
 // the address of the settings page.
 void drawFinishSetup(TFT_eSPI& tft) {
+  // Home may still have the clock font loaded, and that font only contains
+  // digits. Drawing this page with it turns every letter into an empty box
+  // (the digits of the IP address still appear). Switch back first.
+  fonts::use(tft, fonts::Id::BuiltIn);
   tft.fillScreen(theme::BG);
 
   // The QR code uses the IP address rather than cydesk.local: phones open it
@@ -83,6 +87,8 @@ void drawFinishSetup(TFT_eSPI& tft) {
 }
 
 void StatusPage::draw(TFT_eSPI& tft) {
+  // update() calls draw() directly, skipping the page manager's font reset.
+  fonts::use(tft, fonts::Id::BuiltIn);
   shownConnected_ = WiFi.status() == WL_CONNECTED;
   if (shownConnected_ && !settings_.isComplete()) {
     drawFinishSetup(tft);

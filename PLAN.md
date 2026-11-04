@@ -66,7 +66,9 @@ Holding a finger on the screen for about 5 seconds reopens the Wi-Fi portal.
    leaves the network, as soon as you switch apps. So it must never need copying and pasting.
    The board joins that network by name, not by one mesh node's radio address. If the node
    drops it, it looks for any other node of the same network. A lost link does not open
-   this portal; a 5-second hold still does.
+   this portal; a 5-second hold still does. After the radio settles, the screen is drawn
+   again: a scan can mirror the panel, and the setup page was being painted with the
+   clock font (digits only), so letters came out as empty boxes.
 2. **Settings page** (`settings_web.cpp`): served by the board on the home network at
    `http://cydesk.local` (or its IP). It holds the name, ZIP code, WeatherAPI key, WDGWars key,
    °F or °C, and the 12/24-hour clock (later also the desk pet). While anything is missing, the screen shows a QR code that opens the page. The QR
