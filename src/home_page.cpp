@@ -19,8 +19,10 @@ constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
 constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
 // Sunrise/sunset above the weather block, inset from the right edge.
 constexpr int SUN_COL_X[2] = {238, 288};  // column centres
-constexpr int SUN_ICON_Y = 122;
-constexpr int SUN_TIME_Y = 144;
+// 3 px above the first try: the times were clipping the ° and the weather icon
+// was chopping off the bottoms of the times.
+constexpr int SUN_ICON_Y = 119;
+constexpr int SUN_TIME_Y = 141;
 constexpr int SUN_AREA_X = 210;           // left edge of the area cleared for them
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
 
