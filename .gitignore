@@ -7,6 +7,10 @@
 # macOS clutter
 .DS_Store
 
+# Bytecode stores the absolute path of the script that produced it.
+__pycache__/
+*.pyc
+
 # Private notes and working files (not for the public repo)
 CLAUDE.local.md
 local/

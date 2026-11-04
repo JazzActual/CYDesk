@@ -46,6 +46,14 @@ def stage_flasher(source, target, env):
     )
     env.Execute(env.VerboseAction(cmd, "Packing the web flasher image"))
 
+    # The compiler is told to rewrite the home folder, but check the image
+    # anyway. A hit here means a path was baked in and must not be committed.
+    home = str(Path.home()).encode()
+    if home in merged.read_bytes():
+        raise SystemExit(
+            "firmware.bin still contains this computer's home folder"
+        )
+
     manifest = {
         "name": "CYDesk 3.5" if folder == "cyd35" else "CYDesk 2.8",
         "version": datetime.date.today().isoformat(),
