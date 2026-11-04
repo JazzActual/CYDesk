@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 
+#include "fonts.h"
 #include "qr_draw.h"
 #include "settings.h"
 #include "settings_web.h"
@@ -21,11 +22,17 @@ void PageManager::next() {
 }
 
 void PageManager::redraw() {
+  fonts::use(tft_, fonts::Id::BuiltIn);  // pages that want smooth fonts load their own
   if (count_ > 0) pages_[current_]->draw(tft_);
 }
 
 void PageManager::update() {
   if (count_ > 0) pages_[current_]->update(tft_);
+}
+
+void PageManager::dataChanged() {
+  fonts::use(tft_, fonts::Id::BuiltIn);
+  if (count_ > 0) pages_[current_]->dataChanged(tft_);
 }
 
 // ---- StatusPage ------------------------------------------------------------
@@ -43,9 +50,8 @@ String fitText(TFT_eSPI& tft, String text, int maxWidth, uint8_t font) {
 
 // Shown when Wi-Fi works but name/ZIP/key are still missing: a QR code and
 // the address of the settings page.
-static void drawFinishSetup(TFT_eSPI& tft) {
+void drawFinishSetup(TFT_eSPI& tft) {
   tft.fillScreen(theme::BG);
-  tft.fillRect(0, 0, tft.width(), 3, theme::CYAN);
 
   // The QR code uses the IP address rather than cydesk.local: phones open it
   // instantly, while ".local" names can take a few seconds to look up.
@@ -78,7 +84,6 @@ void StatusPage::draw(TFT_eSPI& tft) {
   }
 
   tft.fillScreen(theme::BG);
-  tft.fillRect(0, 0, tft.width(), 3, theme::CYAN);
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::CYAN, theme::BG);
   tft.drawString("Settings check", 12, 12, 4);
@@ -131,7 +136,6 @@ void PlaceholderPage::draw(TFT_eSPI& tft) {
   tft.fillScreen(theme::BG);
 
   // Coloured stripe across the top, like the card's cyan top edge.
-  tft.fillRect(0, 0, tft.width(), 3, accent_);
 
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(accent_, theme::BG);

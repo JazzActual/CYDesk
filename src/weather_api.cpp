@@ -21,10 +21,35 @@ String describeApiError(int code, const String& message) {
     default:   return message.length() ? message : String("Weather error ") + code;
   }
 }
+// Days since 1970-01-01 for a calendar date (the standard "days from civil"
+// algorithm). Lets us turn "2026-11-04 12:30" into seconds without needing
+// any timezone settings.
+int64_t daysFromCivil(int y, unsigned m, unsigned d) {
+  y -= m <= 2;
+  const int64_t era = (y >= 0 ? y : y - 399) / 400;
+  const unsigned yoe = static_cast<unsigned>(y - era * 400);
+  const unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+  const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+  return era * 146097 + static_cast<int64_t>(doe) - 719468;
+}
+
+// WeatherAPI gives the local time as text ("2026-11-04 12:30") plus the same
+// moment as a UTC timestamp. The difference is the local UTC offset, which
+// already includes daylight saving time.
+bool computeUtcOffset(const char* localText, int64_t utcEpoch, int32_t& offsetOut) {
+  int y, mo, d, h, mi;
+  if (!localText || sscanf(localText, "%d-%d-%d %d:%d", &y, &mo, &d, &h, &mi) != 5) return false;
+  const int64_t localAsIfUtc = daysFromCivil(y, mo, d) * 86400 + h * 3600 + mi * 60;
+  const int64_t diff = localAsIfUtc - utcEpoch;
+  // The text has no seconds, so round to the nearest 15 minutes (every real
+  // timezone is a multiple of 15 min).
+  offsetOut = static_cast<int32_t>(((diff + (diff >= 0 ? 450 : -450)) / 900) * 900);
+  return true;
+}
 }  // namespace
 
-PlaceCheck checkPlace(const Settings& settings) {
-  PlaceCheck result;
+CurrentWeather fetchCurrent(const Settings& settings) {
+  CurrentWeather result;
   if (WiFi.status() != WL_CONNECTED) {
     result.error = "No Wi-Fi";
     return result;
@@ -42,7 +67,7 @@ PlaceCheck checkPlace(const Settings& settings) {
   // little length markers mixed into the data), which the JSON reader below
   // can't handle when reading straight from the network stream.
   http.useHTTP10(true);
-  // current.json is the smallest request that tells us the place name.
+  // current.json: right-now conditions plus the place and its local time.
   const String url = String(API_BASE) + "/current.json?key=" + settings.weatherKey +
                      "&q=" + settings.zip + "&aqi=no";
   if (!http.begin(tls, url)) {
@@ -64,7 +89,14 @@ PlaceCheck checkPlace(const Settings& settings) {
   JsonDocument filter;
   filter["location"]["name"] = true;
   filter["location"]["region"] = true;
-  filter["location"]["country"] = true;
+  filter["location"]["localtime"] = true;
+  filter["location"]["localtime_epoch"] = true;
+  filter["current"]["temp_f"] = true;
+  filter["current"]["temp_c"] = true;
+  filter["current"]["humidity"] = true;
+  filter["current"]["is_day"] = true;
+  filter["current"]["condition"]["code"] = true;
+  filter["current"]["condition"]["text"] = true;
   filter["error"]["code"] = true;
   filter["error"]["message"] = true;
 
@@ -92,7 +124,21 @@ PlaceCheck checkPlace(const Settings& settings) {
     result.error = "No place in reply";
     return result;
   }
+  result.place = region.length() ? name + ", " + region : name;
+
+  if (!computeUtcOffset(doc["location"]["localtime"].as<const char*>(),
+                        doc["location"]["localtime_epoch"].as<long>(), result.utcOffsetSec)) {
+    result.error = "No local time in reply";
+    return result;
+  }
+
+  JsonObject current = doc["current"];
+  result.tempF = current["temp_f"] | NAN;
+  result.tempC = current["temp_c"] | NAN;
+  result.humidity = current["humidity"] | -1;
+  result.isDay = (current["is_day"] | 1) == 1;
+  result.conditionCode = current["condition"]["code"] | 0;
+  result.conditionText = current["condition"]["text"] | "";
   result.ok = true;
-  result.label = region.length() ? name + ", " + region : name;
   return result;
 }

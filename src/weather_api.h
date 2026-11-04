@@ -9,12 +9,19 @@
 
 #include "settings.h"
 
-struct PlaceCheck {
+struct CurrentWeather {
   bool ok = false;
-  String label;  // on success: "Chicago, Illinois"
-  String error;  // on failure: short message for the screen
+  String error;          // on failure: short message for the screen
+
+  String place;          // "Chicago, Illinois"
+  int32_t utcOffsetSec = 0;  // local time minus UTC, e.g. -18000 for UTC-5
+
+  float tempF = NAN, tempC = NAN;
+  int humidity = -1;     // percent
+  int conditionCode = 0; // WeatherAPI condition code (1000 = sunny/clear, ...)
+  String conditionText;  // "Partly cloudy"
+  bool isDay = true;     // WeatherAPI decides this from sunrise/sunset
 };
 
-// Asks WeatherAPI for the current weather at settings.zip, just to confirm the
-// key works and the ZIP is a real place. Needs Wi-Fi. Takes ~1–2 s.
-PlaceCheck checkPlace(const Settings& settings);
+// Fetches the current weather for settings.zip. Needs Wi-Fi. Takes ~1–2 s.
+CurrentWeather fetchCurrent(const Settings& settings);

@@ -17,6 +17,10 @@ class Page {
   // Called every loop() while the page is visible, for small redraws
   // (e.g. the clock digits). Default: nothing.
   virtual void update(TFT_eSPI& tft) {}
+
+  // Called when new data arrived (e.g. a weather update). Default: redraw
+  // everything. Pages that redraw only what changed can override this.
+  virtual void dataChanged(TFT_eSPI& tft) { draw(tft); }
 };
 
 class PageManager {
@@ -29,6 +33,7 @@ class PageManager {
   void next();     // go to the following page (wraps around)
   void redraw();   // redraw the current page from scratch
   void update();   // pass loop() on to the current page
+  void dataChanged();  // tell the current page new data arrived
 
   size_t count() const { return count_; }
   size_t currentIndex() const { return current_; }
@@ -40,8 +45,8 @@ class PageManager {
   size_t current_ = 0;
 };
 
-// Temporary page for step 3: shows the saved settings and Wi-Fi status so we
-// can check the setup portal worked. Replaced by the real Home page in step 4.
+// Diagnostics page: shows the saved settings, Wi-Fi status and the weather
+// check result. Kept as the last page for now; may be removed in polish.
 struct Settings;
 class StatusPage : public Page {
  public:
@@ -59,6 +64,9 @@ class StatusPage : public Page {
 };
 
 // Temporary stand-in page for step 2: shows its name and page number.
+// "Finish setup" screen with a QR code for the settings page (pages.cpp).
+void drawFinishSetup(TFT_eSPI& tft);
+
 class PlaceholderPage : public Page {
  public:
   PlaceholderPage(const char* name, uint16_t accent, size_t number, size_t total)

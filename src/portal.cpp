@@ -7,7 +7,6 @@
 namespace {
 void drawInstructions(TFT_eSPI& tft, const char* reason) {
   tft.fillScreen(theme::BG);
-  tft.fillRect(0, 0, tft.width(), 3, theme::CYAN);
 
   tft.setTextDatum(TL_DATUM);  // top-left
   tft.setTextColor(theme::CYAN, theme::BG);

@@ -50,12 +50,21 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 1. [x] Scaffold + hello screen: confirmed ILI9341 (ILI9341_2_DRIVER), colours correct, rotation 1, uploads at 460800 baud
 2. [x] Touch (XPT2046 on VSPI, display moved to HSPI): tap cycles pages, 5 s hold with progress bar
 3. [x] Setup: Wi-Fi-only portal, settings page at cydesk.local with a QR code, ZIP + WeatherAPI key check
-4. [ ] Home: clock, date, greeting
+4. [x] Home: clock, date, greeting in Rajdhani smooth fonts (tools/make_fonts.py); clock offset from WeatherAPI, saved in flash
 5. [ ] Weather fetch + home weather block + icon set (with a test mode that steps through every icon)
 6. [ ] Moon phase with the weather layers drawn on top
 7. [ ] Hourly page
 8. [ ] Badge page (wsrv.nl → TJpg_Decoder)
 9. [ ] Polish: offline/stale markers, memory check, fallbacks, optional 4-digit code for the settings page, Wi-Fi portal: the page is slow to pop up after joining DeskBuddy-Setup (the phone's connectivity checks hit "request handler not found"; try answering them directly or pre-scanning networks before opening the access point)
+
+## Look
+
+- Colours come from the WDGWars card: navy background, cyan and pink accents (`theme.h`).
+  No cyan stripe along the top edge (the user didn't want it).
+- Font: **Rajdhani SemiBold** (SIL OFL; the file and license are in `assets/fonts/`), converted
+  to TFT_eSPI smooth fonts by `tools/make_fonts.py`. Sizes: 16 (small text), 24 (greeting,
+  AM/PM), 40 (temperature), 56 (clock). Adding a size means adding a line to `FONTS` and
+  rerunning the script.
 
 ## Constraints
 
