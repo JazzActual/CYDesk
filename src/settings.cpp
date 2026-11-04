@@ -15,6 +15,7 @@ void Settings::load() {
   weatherKey = prefs.getString("wkey", "");
   badgeUrl   = prefs.getString("badge", "");
   fahrenheit = prefs.getBool("fahrenheit", true);
+  clock24h   = prefs.getBool("clock24h", false);
   placeLabel = prefs.getString("place", "");
   prefs.end();
 }
@@ -27,6 +28,7 @@ void Settings::save() const {
   prefs.putString("wkey", weatherKey);
   prefs.putString("badge", badgeUrl);
   prefs.putBool("fahrenheit", fahrenheit);
+  prefs.putBool("clock24h", clock24h);
   prefs.putString("place", placeLabel);
   prefs.remove("city");  // left over from before the switch to ZIP codes
   prefs.end();

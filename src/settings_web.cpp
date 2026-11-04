@@ -108,6 +108,12 @@ void handleRoot() {
   html += String("<label><input type='radio' name='units' value='C'") +
           (s.fahrenheit ? "" : " checked") + "> &deg;C</label></div>";
 
+  html += "<label>Clock</label><div class='units'>";
+  html += String("<label><input type='radio' name='clock' value='12'") +
+          (s.clock24h ? "" : " checked") + "> 12-hour (1:07 PM)</label>";
+  html += String("<label><input type='radio' name='clock' value='24'") +
+          (s.clock24h ? " checked" : "") + "> 24-hour (13:07)</label></div>";
+
   html += "<button type='submit'>Save to desk buddy</button></form>";
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
   html += "</body></html>";
@@ -133,13 +139,15 @@ void handleSave() {
   s.name.trim();
   s.badgeUrl = extractImageUrl(server.arg("badge"));
   s.fahrenheit = server.arg("units") != "C";
+  s.clock24h = server.arg("clock") == "24";
   s.save();
   changed = true;
 
   // Never print the key itself, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s badge=%s\n",
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s badge=%s\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
-                s.fahrenheit ? "F" : "C", s.badgeUrl.length() ? "set" : "none");
+                s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
+                s.badgeUrl.length() ? "set" : "none");
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

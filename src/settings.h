@@ -12,6 +12,7 @@ struct Settings {
   String weatherKey;       // the user's own WeatherAPI.com API key
   String badgeUrl;         // image address taken from the pasted badge HTML
   bool fahrenheit = true;  // false = Celsius
+  bool clock24h = false;   // true = "13:07", false = "1:07 PM"
 
   // Filled in once WeatherAPI confirms the ZIP, e.g. "Chicago, Illinois".
   // Empty = not checked yet (or ZIP/key changed since).

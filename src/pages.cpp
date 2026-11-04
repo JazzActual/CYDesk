@@ -114,7 +114,8 @@ void StatusPage::draw(TFT_eSPI& tft) {
   } else {
     row("Weather", "checking...", theme::MUTED);
   }
-  row("Units", settings_.fahrenheit ? "Fahrenheit" : "Celsius", theme::TEXT);
+  row("Units", String(settings_.fahrenheit ? "Fahrenheit" : "Celsius") +
+                   (settings_.clock24h ? ", 24-hour clock" : ", 12-hour clock"), theme::TEXT);
   row("Badge", settings_.badgeUrl, theme::TEXT);
 
   tft.setTextColor(theme::MUTED, theme::BG);

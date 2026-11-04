@@ -105,11 +105,16 @@ void HomePage::drawTime(TFT_eSPI& tft) {
   }
   shownMinute_ = now.tm_hour * 60 + now.tm_min;
 
-  // 12-hour clock: 0 -> 12 AM, 13 -> 1 PM.
-  int hour12 = now.tm_hour % 12;
-  if (hour12 == 0) hour12 = 12;
   char digits[6];
-  snprintf(digits, sizeof(digits), "%d:%02d", hour12, now.tm_min);
+  if (settings_.clock24h) {
+    // 24-hour clock: "09:05", "13:07".
+    snprintf(digits, sizeof(digits), "%02d:%02d", now.tm_hour, now.tm_min);
+  } else {
+    // 12-hour clock: 0 -> 12 AM, 13 -> 1 PM.
+    int hour12 = now.tm_hour % 12;
+    if (hour12 == 0) hour12 = 12;
+    snprintf(digits, sizeof(digits), "%d:%02d", hour12, now.tm_min);
+  }
 
   // Digits and AM/PM share a baseline, so their bottoms line up.
   fonts::use(tft, fonts::Id::Clock);
@@ -117,9 +122,11 @@ void HomePage::drawTime(TFT_eSPI& tft) {
   tft.setTextColor(theme::TEXT, theme::BG);
   const int digitsWidth = tft.drawString(digits, MARGIN, TIME_BASELINE);
 
-  fonts::use(tft, fonts::Id::Medium);
-  tft.setTextColor(theme::CYAN, theme::BG);
-  tft.drawString(now.tm_hour < 12 ? "AM" : "PM", MARGIN + digitsWidth + 6, TIME_BASELINE);
+  if (!settings_.clock24h) {
+    fonts::use(tft, fonts::Id::Medium);
+    tft.setTextColor(theme::CYAN, theme::BG);
+    tft.drawString(now.tm_hour < 12 ? "AM" : "PM", MARGIN + digitsWidth + 6, TIME_BASELINE);
+  }
 
   // Date: "Wednesday, November 4"
   fonts::use(tft, fonts::Id::Small);
