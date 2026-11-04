@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <math.h>
 
 namespace {
 constexpr const char* API_BASE = "https://api.weatherapi.com/v1";
@@ -60,6 +61,46 @@ time_t parseSunTime(const char* date, const char* clock, int32_t utcOffset) {
   const int64_t local = daysFromCivil(y, mo, d) * 86400 + h * 3600 + mi * 60;
   return static_cast<time_t>(local - utcOffset);
 }
+
+// WeatherAPI names one of eight phases and says what percent of the disc is
+// lit. The icon wants one number around the cycle (0 new, 0.25 first quarter,
+// 0.5 full, 0.75 last quarter). Percent lit can't tell waxing from waning —
+// both quarters are half lit — so the name picks the half, and the percent
+// places the moon inside it. Returns NAN for a name we don't recognise.
+float moonPhaseFromAstro(const char* name, int illumination) {
+  struct Named {
+    const char* name;
+    bool waxing;      // lit area growing; false = shrinking
+    float midpoint;   // used only when the percent is missing
+  };
+  const Named known[] = {
+      {"New Moon", true, 0.0f},
+      {"Waxing Crescent", true, 0.125f},
+      {"First Quarter", true, 0.25f},
+      {"Waxing Gibbous", true, 0.375f},
+      {"Full Moon", false, 0.5f},
+      {"Waning Gibbous", false, 0.625f},
+      {"Last Quarter", false, 0.75f},
+      {"Waning Crescent", false, 0.875f},
+  };
+  const Named* match = nullptr;
+  for (const Named& phase : known) {
+    if (name && strcmp(name, phase.name) == 0) {
+      match = &phase;
+      break;
+    }
+  }
+  if (!match) return NAN;
+  if (illumination < 0 || illumination > 100) return match->midpoint;
+
+  // Undo the icon's lighting: lit fraction = (1 - cos(2π · phase)) / 2
+  // on the waxing half. 0% lands on new moon, 100% on full moon.
+  float cosine = 1.0f - 2.0f * (illumination / 100.0f);
+  if (cosine > 1.0f) cosine = 1.0f;
+  if (cosine < -1.0f) cosine = -1.0f;
+  const float waxingPhase = acosf(cosine) / (2.0f * PI);
+  return match->waxing ? waxingPhase : 1.0f - waxingPhase;
+}
 }  // namespace
 
 int WeatherReport::precipChanceAt(time_t when) const {
@@ -91,7 +132,7 @@ WeatherReport fetchWeather(const Settings& settings) {
   // can't handle when reading straight from the network stream.
   http.useHTTP10(true);
   // forecast.json with 2 days: current conditions, the place and its local
-  // time, sunrise/sunset for today and tomorrow, and 48 hourly forecasts.
+  // time, sunrise/sunset and today's moon phase, and 48 hourly forecasts.
   const String url = String(API_BASE) + "/forecast.json?key=" + settings.weatherKey +
                      "&q=" + settings.zip + "&days=2&aqi=no&alerts=no";
   if (!http.begin(tls, url)) {
@@ -126,6 +167,8 @@ WeatherReport fetchWeather(const Settings& settings) {
   dayFilter["date"] = true;
   dayFilter["astro"]["sunrise"] = true;
   dayFilter["astro"]["sunset"] = true;
+  dayFilter["astro"]["moon_phase"] = true;
+  dayFilter["astro"]["moon_illumination"] = true;
   JsonObject hourFilter = dayFilter["hour"].add<JsonObject>();
   hourFilter["time_epoch"] = true;
   hourFilter["temp_f"] = true;
@@ -186,6 +229,11 @@ WeatherReport fetchWeather(const Settings& settings) {
     if (dayIndex < 2) {
       result.sunrise[dayIndex] = parseSunTime(date, day["astro"]["sunrise"], result.utcOffsetSec);
       result.sunset[dayIndex] = parseSunTime(date, day["astro"]["sunset"], result.utcOffsetSec);
+    }
+    // The moon barely moves in a day, so today's phase is enough for the icon.
+    if (dayIndex == 0) {
+      result.moonPhase = moonPhaseFromAstro(day["astro"]["moon_phase"].as<const char*>(),
+                                             day["astro"]["moon_illumination"] | -1);
     }
     dayIndex++;
     for (JsonObject hour : day["hour"].as<JsonArray>()) {

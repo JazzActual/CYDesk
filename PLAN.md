@@ -24,10 +24,11 @@ A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, 
      it's sunset | tomorrow's sunrise; before sunrise, yesterday's sunset is estimated as
      today's minus 24 h.
    - Weather icon (`weather_icons.cpp`): 11 kinds drawn from smooth primitives at 72×72 (designed
-     at 96 and scaled). The sky layer is a sun by day or a moon by night (moon phase placeholder
-     until step 6), with cloud, rain, snow, sleet, fog and lightning layers on top. `/icons` on
+     at 96 and scaled). The sky layer is a sun by day or a moon by night. The phase comes from
+     today's astronomy data (0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter), with cloud,
+     rain, snow, sleet, fog and lightning layers on top. `/icons` on
      the settings server steps through every icon, day and night.
-   - **Desk pet, bottom left (next up, see below).**
+   - **Desk pet, bottom left (see below).**
 2. **Hourly**: the next 12 hours as 6×2 tiles: hour, small icon, temperature, chance of rain.
    Credit "Weather by WeatherAPI.com" here.
 3. **Badge**: one user-supplied HTML image badge (e.g. the WDGWars card). The board takes the
@@ -35,7 +36,7 @@ A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, 
    refreshing every 10 minutes, with a "stale" marker when a fetch fails.
 4. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
 
-## Desk pet (decided, not built yet)
+## Desk pet
 
 - Pixel art: a 20×20 animal on a 26×26 canvas (room for an umbrella and "z z"), drawn at 3×
   (78 px) in the bottom-left corner. Animals: **fox, raccoon, owl**, chosen on the settings page.
@@ -91,7 +92,7 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 4. [x] Home: clock, date, greeting in Rajdhani smooth fonts (tools/make_fonts.py); clock offset from WeatherAPI, saved in flash
 5. [x] Weather on Home: icon set (+ /icons test), temperature, rain chance, %RH, sunrise/sunset
 5b. [x] Desk pet: fox / raccoon / owl / none, reactions, settings (Off / Idle / Reacts + animal)
-6. [ ] Moon phase with the weather layers drawn on top
+6. [x] Moon phase with the weather layers drawn on top
 7. [ ] Hourly page
 8. [ ] Badge page (wsrv.nl → TJpg_Decoder)
 9. [ ] Polish: offline/stale markers, memory check, fallbacks, optional 4-digit code for the settings page, Wi-Fi portal: the page is slow to pop up after joining DeskBuddy-Setup (the phone's connectivity checks hit "request handler not found"; try answering them directly or pre-scanning networks before opening the access point)

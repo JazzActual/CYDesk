@@ -1,5 +1,6 @@
 #include "home_page.h"
 
+#include <math.h>
 #include <WiFi.h>
 
 #include "fonts.h"
@@ -32,8 +33,10 @@ constexpr int TEMP_BASELINE = 188;
 constexpr int PRECIP_Y = 197;                   // top of the rain-chance line
 constexpr int HUMIDITY_Y = 217;                 // top of the humidity line
 
-// Until step 6 calculates the real moon phase, the moon is drawn as a crescent.
-constexpr float MOON_PHASE_PLACEHOLDER = 0.22f;
+// Phase for the icon: today's real moon, or a full moon if we don't have one yet.
+float moonPhaseOf(const WeatherReport& w) {
+  return (w.ok && !isnan(w.moonPhase)) ? w.moonPhase : 0.5f;
+}
 
 constexpr uint32_t DEMO_STEP_MS = 2000;
 constexpr int DEMO_STEPS = static_cast<int>(IconKind::Count) * 2;  // every icon, day + night
@@ -181,8 +184,11 @@ String HomePage::weatherSignature() const {
   const WeatherReport& w = weather::current();
   if (!w.ok) return "none";
   const float temp = settings_.fahrenheit ? w.tempF : w.tempC;
+  // Moon hundredths so a new phase redraws the icon on the next weather check.
+  const int moon = isnan(w.moonPhase) ? -1 : lroundf(w.moonPhase * 100);
   return String(w.conditionCode) + (w.isDay ? "d" : "n") + lroundf(temp) +
-         (settings_.fahrenheit ? "F" : "C") + w.humidity + "/" + w.precipChanceAt(time(nullptr));
+         (settings_.fahrenheit ? "F" : "C") + w.humidity + "/" + w.precipChanceAt(time(nullptr)) +
+         "m" + moon;
 }
 
 String HomePage::sunSignature() const {
@@ -323,10 +329,10 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
   const WeatherReport& w = weather::current();
   if (demoStep_ >= 0) {
     drawWeatherIcon(tft, ICON_X, ICON_Y, static_cast<IconKind>(demoStep_ / 2),
-                    demoStep_ % 2 == 1, MOON_PHASE_PLACEHOLDER);
+                    demoStep_ % 2 == 1, moonPhaseOf(w));
   } else if (w.ok) {
     drawWeatherIcon(tft, ICON_X, ICON_Y, iconForCode(w.conditionCode), !w.isDay,
-                    MOON_PHASE_PLACEHOLDER);
+                    moonPhaseOf(w));
   }
 
   fonts::use(tft, fonts::Id::Temp);

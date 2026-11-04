@@ -46,9 +46,9 @@ void update(Settings& settings) {
     settings.save();
   }
   Serial.printf("[weather] ok: %.0fF, %d%% humidity, code %d, %s; %d forecast hours, "
-                "precip now %d%%\n",
+                "precip now %d%%, moon phase %.2f\n",
                 fresh.tempF, fresh.humidity, fresh.conditionCode, fresh.isDay ? "day" : "night",
-                fresh.hourCount, fresh.precipChanceAt(time(nullptr)));
+                fresh.hourCount, fresh.precipChanceAt(time(nullptr)), fresh.moonPhase);
   for (int d = 0; d < 2; d++) {
     // Printed as minutes past local midnight, so the log shows no dates or places.
     auto local = [&](time_t t) { return t ? (int)(((t + fresh.utcOffsetSec) % 86400) / 60) : -1; };

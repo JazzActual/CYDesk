@@ -38,6 +38,10 @@ struct WeatherReport {
   time_t sunrise[2] = {0, 0};
   time_t sunset[2] = {0, 0};
 
+  // Today's moon, for the night icon. 0 = new, 0.25 = first quarter,
+  // 0.5 = full, 0.75 = last quarter. NAN if the reply had no phase we know.
+  float moonPhase = NAN;
+
   // The next hours, starting with the current one.
   static constexpr int MAX_HOURS = 48;
   HourForecast hours[MAX_HOURS];
