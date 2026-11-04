@@ -106,6 +106,16 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 9. [ ] Polish: offline/stale markers, memory check, fallbacks, optional 4-digit code for the settings page, Wi-Fi portal: the page is slow to pop up after joining DeskBuddy-Setup (the phone's connectivity checks hit "request handler not found"; try answering them directly or pre-scanning networks before opening the access point)
 10. [ ] Later: picture badge again. An image embed or a bare image address, fitted through wsrv.nl and drawn with TJpg_Decoder. Shown when no WDGWars key is saved. Taken out so the badge page is WDGWars only for now.
 
+## Next batch (added 2026-11-04, not started)
+
+Do the screen toggles first, so each new page can be switched off as it lands. The bear is a preview on the Mac before any firmware. BLE is last: it shares the radio with Wi-Fi.
+
+11. [ ] **WiGLE stats page**, same idea as the WDGWars badge. Read-only `GET https://api.wigle.net/api/v2/stats/user` with HTTP Basic auth (the API name and token from the WiGLE account). Draw rank and the discovery counts (Wi-Fi, cell, Bluetooth — confirm the exact JSON fields before laying the page out). The token is stored in flash like the other keys and is never printed. One HTTPS download at a time, refresh every 15 minutes, keep the last result and mark it stale if a fetch fails. Empty state when no token is saved.
+12. [ ] **Bear** on the desk pet list, same 20×20 mirrored left-half style as the fox, raccoon, and owl (tail overlay, shared accessories). Render a preview on the Mac first (true size, enlarged 2×, hard pixels) and port the art only after it is approved. Then add Bear next to the other animals on the settings page.
+13. [ ] **Toggle extra screens.** Home and Hourly always stay in the tap cycle. Each add-on page (WDGWars, WiGLE, GitHub stars, and any added later) gets a checkbox on the settings page and is skipped when it is off. A page that is on but has no key still shows its empty state. Status stays in the cycle as the diagnostics page.
+14. [ ] **GitHub star tracker page.** Settings hold one or more `owner/repo` pairs. For a public repo, `GET https://api.github.com/repos/<owner>/<repo>` returns `stargazers_count` with no key (60 requests an hour; one repo every 15 minutes fits). The page shows the repo name and the star count. A token is only needed for a private repo or a higher limit — decide that when building it. Same fetch rules: one HTTPS call at a time, keep the last count if a fetch fails.
+15. [ ] **BLE alerts.** The settings page holds a list of device names or prefixes the user cares about (Axon cameras are the example). The board passive-scans advertisements and shows an alert when one of those names is heard, then clears it after the device goes quiet. Only those matches are kept; the scan does not store or print every device nearby. Wi-Fi and BLE share one radio, so the scan pauses around the HTTPS fetches and must not stall touch. Draw the alert layout as a preview before putting it on the board.
+
 ## Look
 
 - Colours come from the WDGWars card: navy background, cyan and pink accents (`theme.h`).
