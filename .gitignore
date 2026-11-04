@@ -1,0 +1,8 @@
+# PlatformIO build output and downloaded libraries
+.pio/
+
+# Editor settings (machine-specific)
+.vscode/
+
+# macOS clutter
+.DS_Store
