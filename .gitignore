@@ -6,3 +6,7 @@
 
 # macOS clutter
 .DS_Store
+
+# Private notes and working files (not for the public repo)
+CLAUDE.local.md
+local/
