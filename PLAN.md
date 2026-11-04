@@ -36,7 +36,7 @@ The settings are stored in the ESP32's flash (`Preferences`). Nothing private is
 ## Build steps (each one ends with something visible on the screen, then a commit)
 
 1. [x] Scaffold + hello screen: confirmed ILI9341 (ILI9341_2_DRIVER), colours correct, rotation 1, uploads at 460800 baud
-2. [ ] Touch (XPT2046 on its own SPI bus): cycle 3 placeholder pages, detect a long press
+2. [x] Touch (XPT2046 on VSPI, display moved to HSPI): tap cycles pages, 5 s hold with progress bar
 3. [ ] Setup portal, Wi-Fi and saved settings, including the city lookup
 4. [ ] Home: clock, date, greeting
 5. [ ] Weather fetch + home weather block + icon set (with a test mode that steps through every icon)

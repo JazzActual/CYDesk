@@ -1,79 +1,114 @@
-// CYDesk — Step 1: hello screen / display test
+// CYDesk — Step 2: touch + page switching
 //
-// What this checks, just by looking at the screen:
-//   1. Driver:   if anything shows up at all, the ILI9341 driver is right.
-//   2. Colours:  each bar's label must match its colour (RED bar says "RED").
-//                Swapped red/blue  -> colour order is wrong.
-//                Black looks white  -> colour inversion is wrong.
-//   3. Rotation: "TOP" text should be at the top edge, the right way up.
+// Tap anywhere          -> next page (Home -> Hourly -> Badge -> Home ...)
+// Hold for 5 seconds    -> "setup" (just a stub screen for now; the real
+//                          Wi-Fi setup portal arrives in step 3)
 //
-// It also turns off the RGB LED, which otherwise glows dimly at boot.
+// While you hold, a bar fills along the bottom so you can see the long
+// press coming.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 
-// RGB LED pins. The LED is "common anode": writing HIGH turns a colour OFF.
-constexpr int LED_R = 22;
-constexpr int LED_G = 16;
-constexpr int LED_B = 17;
+#include "pages.h"
+#include "pins.h"
+#include "theme.h"
+#include "touch.h"
 
 // Landscape. If everything comes out upside down, change this to 3.
 constexpr uint8_t SCREEN_ROTATION = 1;
 
-TFT_eSPI tft;  // display driver, configured entirely by platformio.ini
+// Don't show the hold bar for ordinary taps, only once a press lasts this long.
+constexpr uint32_t HOLD_BAR_DELAY_MS = 1000;
+constexpr int HOLD_BAR_HEIGHT = 6;
+
+TFT_eSPI tft;
+TouchInput touch;
+PageManager pages(tft);
+
+// Placeholders until the real pages exist.
+PlaceholderPage homePage("Home", theme::CYAN, 1, 3);
+PlaceholderPage hourlyPage("Hourly", theme::PINK, 2, 3);
+PlaceholderPage badgePage("Badge", theme::TEXT, 3, 3);
 
 void ledsOff() {
-  for (int pin : {LED_R, LED_G, LED_B}) {
+  for (int pin : {PIN_LED_R, PIN_LED_G, PIN_LED_B}) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, HIGH);
   }
 }
 
-// One vertical colour bar with its name written in the middle.
-void drawBar(int index, int count, uint16_t colour, const char* name, uint16_t textColour) {
-  const int barWidth = tft.width() / count;
-  const int x = index * barWidth;
-  tft.fillRect(x, 40, barWidth, tft.height() - 80, colour);
-  tft.setTextColor(textColour, colour);
-  tft.setTextDatum(MC_DATUM);  // MC = "middle centre": x,y is the text's centre
-  tft.drawString(name, x + barWidth / 2, tft.height() / 2, 2);
+// Step 3 replaces this with the real Wi-Fi setup portal.
+void showSetupStub() {
+  Serial.println("[setup] long press -> setup portal (stub)");
+  tft.fillScreen(theme::BG);
+  tft.setTextDatum(MC_DATUM);
+  tft.setTextColor(theme::CYAN, theme::BG);
+  tft.drawString("Setup", tft.width() / 2, tft.height() / 2 - 14, 4);
+  tft.setTextColor(theme::MUTED, theme::BG);
+  tft.drawString("(portal comes in step 3)", tft.width() / 2, tft.height() / 2 + 16, 2);
 }
 
-void drawTestScreen() {
-  tft.fillScreen(TFT_BLACK);
+// Draws the "keep holding..." progress bar along the bottom edge.
+// Only redraws when the bar's width changes, to avoid flicker.
+void updateHoldBar() {
+  static int shownWidth = 0;  // how much of the bar is on screen right now
 
-  // Five bars: if a label doesn't match its colour, the settings need a tweak.
-  drawBar(0, 5, TFT_RED,   "RED",   TFT_WHITE);
-  drawBar(1, 5, TFT_GREEN, "GREEN", TFT_BLACK);
-  drawBar(2, 5, TFT_BLUE,  "BLUE",  TFT_WHITE);
-  drawBar(3, 5, TFT_WHITE, "WHITE", TFT_BLACK);
-  drawBar(4, 5, TFT_BLACK, "BLACK", TFT_WHITE);
+  int wanted = 0;
+  if (touch.isDown() && !touch.longPressFired() && touch.heldMs() > HOLD_BAR_DELAY_MS) {
+    const uint32_t progress = touch.heldMs() - HOLD_BAR_DELAY_MS;
+    const uint32_t span = TouchInput::LONG_PRESS_MS - HOLD_BAR_DELAY_MS;
+    wanted = min<uint32_t>(progress, span) * tft.width() / span;
+  }
 
-  // Top / bottom labels to check rotation.
-  tft.setTextColor(TFT_CYAN, TFT_BLACK);
-  tft.setTextDatum(TC_DATUM);  // top centre
-  tft.drawString("TOP - CYDesk hello!", tft.width() / 2, 8, 4);
-  tft.setTextDatum(BC_DATUM);  // bottom centre
-  tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-  char info[48];
-  snprintf(info, sizeof(info), "BOTTOM  %dx%d  rotation %d", tft.width(), tft.height(), SCREEN_ROTATION);
-  tft.drawString(info, tft.width() / 2, tft.height() - 8, 2);
+  if (wanted == shownWidth) return;
+  const int y = tft.height() - HOLD_BAR_HEIGHT;
+  if (wanted > shownWidth) {
+    tft.fillRect(shownWidth, y, wanted - shownWidth, HOLD_BAR_HEIGHT, theme::CYAN);
+  } else if (wanted == 0 && !touch.longPressFired()) {
+    // Let go early: put the page back the way it was.
+    pages.redraw();
+  }
+  shownWidth = wanted;
 }
 
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk step 1: display test");
+  Serial.println("\nCYDesk step 2: touch + pages");
 
-  tft.init();  // also switches the backlight on (TFT_BL in platformio.ini)
+  tft.init();
   tft.setRotation(SCREEN_ROTATION);
-  drawTestScreen();
+  touch.begin();
 
-  Serial.printf("Screen is %d x %d. Free heap: %u bytes\n",
-                tft.width(), tft.height(), ESP.getFreeHeap());
+  pages.add(&homePage);
+  pages.add(&hourlyPage);
+  pages.add(&badgePage);
+  pages.redraw();
+
+  Serial.printf("Ready. Free heap: %u bytes\n", ESP.getFreeHeap());
 }
 
 void loop() {
-  // Nothing to do yet. A short pause keeps the CPU from spinning flat out.
-  delay(100);
+  static bool inSetup = false;  // is the setup stub on screen?
+
+  switch (touch.poll()) {
+    case TouchEvent::Tap:
+      if (inSetup) {
+        inSetup = false;
+        pages.redraw();  // back to the page we came from
+      } else {
+        pages.next();
+      }
+      break;
+    case TouchEvent::LongPress:
+      inSetup = true;
+      showSetupStub();
+      break;
+    case TouchEvent::None:
+      break;
+  }
+
+  updateHoldBar();
+  pages.update();
 }
