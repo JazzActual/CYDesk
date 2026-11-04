@@ -230,12 +230,23 @@ const char* iconName(IconKind kind) {
 
 void drawWeatherIcon(TFT_eSPI& tft, int x, int y, IconKind kind, bool night, float moonPhase) {
   TFT_eSprite sprite(&tft);
-  if (!sprite.createSprite(ICON_SIZE, ICON_SIZE)) {
+  // Drawn at the design size, then nearest-neighbour scaled to ICON_SIZE so the
+  // composition stays the same when we shrink the on-screen icon.
+  if (!sprite.createSprite(ICON_DESIGN, ICON_DESIGN)) {
     Serial.println("[icons] not enough memory for the icon sprite");
     return;
   }
   sprite.fillSprite(theme::BG);
   drawIcon(sprite, kind, night, moonPhase);
-  sprite.pushSprite(x, y);
+  if (ICON_SIZE == ICON_DESIGN) {
+    sprite.pushSprite(x, y);
+  } else {
+    for (int dy = 0; dy < ICON_SIZE; dy++) {
+      const int sy = dy * ICON_DESIGN / ICON_SIZE;
+      for (int dx = 0; dx < ICON_SIZE; dx++) {
+        tft.drawPixel(x + dx, y + dy, sprite.readPixel(dx * ICON_DESIGN / ICON_SIZE, sy));
+      }
+    }
+  }
   sprite.deleteSprite();
 }

@@ -15,12 +15,13 @@ enum class IconKind {
   Count  // number of kinds (for the icon test)
 };
 
-constexpr int ICON_SIZE = 96;  // icons are ICON_SIZE x ICON_SIZE pixels
+constexpr int ICON_SIZE = 72;   // on-screen size (width and height)
+constexpr int ICON_DESIGN = 96; // internal draw size; scaled down when pushed
 
 IconKind iconForCode(int weatherApiCode);
 const char* iconName(IconKind kind);
 
 // Draws the icon with its top-left corner at (x, y).
 // moonPhase: 0 = new moon, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter.
-// Uses a temporary 96x96 sprite (~18 KB) so the icon appears in one go.
+// Uses a temporary ICON_DESIGN×ICON_DESIGN sprite (~18 KB), then scales to ICON_SIZE.
 void drawWeatherIcon(TFT_eSPI& tft, int x, int y, IconKind kind, bool night, float moonPhase);

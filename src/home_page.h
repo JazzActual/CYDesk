@@ -2,11 +2,10 @@
 //
 //   ┌──────────────────────────────────────┐
 //   │ Morning, Jazz!                       │
-//   │                       ☀▲       ☀▼    │
-//   │ 10:42 AM            7:19 AM  5:40 PM │  last / next sun event
 //   │ Wednesday, November 4                │
-//   │                          ┌────────┐  │
-//   │                    64°   │  icon  │  │
+//   │ 10:42 AM                             │
+//   │                    ☀▲ 7:19    ☀▼ 5:40│  last / next sun (over weather)
+//   │                    64°   │  icon  │  │  72 px weather icon
 //   │                  ☂ 60%   │        │  │  chance of rain/snow
 //   │                  90%RH   └────────┘  │  relative humidity
 //   └──────────────────────────────────────┘

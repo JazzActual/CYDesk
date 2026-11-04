@@ -12,28 +12,24 @@ namespace {
 // Layout (landscape, 320 x 240).
 constexpr int MARGIN = 14;
 constexpr int GREETING_Y = 12;      // top of the greeting (24 px font)
-constexpr int TIME_TOP = 50;        // top of the area cleared for the clock
-constexpr int TIME_BASELINE = 98;   // clock digits and AM/PM sit on this line
-constexpr int DATE_Y = 128;         // top of the date (14 px font)
-
-// Sunrise/sunset, top right: two columns, previous event left, next right.
-constexpr int SUN_COL_X[2] = {222, 278};  // column centres
-constexpr int SUN_ICON_Y = 50;
-constexpr int SUN_TIME_Y = 72;
-constexpr int SUN_AREA_X = 194;           // left edge of the area cleared for them
+constexpr int DATE_Y = 44;          // top of the date (14 px font), under the greeting
+constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
+constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
+// Sunrise/sunset above the weather block, inset from the right edge.
+constexpr int SUN_COL_X[2] = {238, 288};  // column centres
+constexpr int SUN_ICON_Y = 122;
+constexpr int SUN_TIME_Y = 144;
+constexpr int SUN_AREA_X = 210;           // left edge of the area cleared for them
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
 
-// Weather, bottom right: the icon in the corner, temperature and humidity
-// stacked to its left and right-aligned against it.
-constexpr int ICON_X = 214, ICON_Y = 136;
+// Weather, bottom right: 72 px icon, temperature and humidity to its left.
+constexpr int ICON_X = 240, ICON_Y = 158;
 constexpr int WEATHER_TEXT_RIGHT = ICON_X - 8;  // right edge of temperature/humidity
 constexpr int WEATHER_TEXT_LEFT = 100;          // left edge of the area they may use
-constexpr int TEMP_BASELINE = 180;
-constexpr int PRECIP_Y = 189;                   // top of the rain-chance line
-constexpr int HUMIDITY_Y = 209;                 // top of the humidity line
-
-// The clock/date area stops short of the icon so redrawing it never touches it.
-constexpr int LEFT_AREA_W = ICON_X - 4;
+constexpr int WEATHER_CLEAR_Y = 162;            // below the sun times; weather redraw starts here
+constexpr int TEMP_BASELINE = 188;
+constexpr int PRECIP_Y = 197;                   // top of the rain-chance line
+constexpr int HUMIDITY_Y = 217;                 // top of the humidity line
 
 // Until step 6 calculates the real moon phase, the moon is drawn as a crescent.
 constexpr float MOON_PHASE_PLACEHOLDER = 0.22f;
@@ -92,11 +88,14 @@ void drawSunEventIcon(TFT_eSPI& tft, int cx, int top, bool rising) {
 }
 
 // A small umbrella (12 x 12, top-left at x, y) for the chance-of-rain line.
+// Stem is centred under the canopy; the hook curves left from the stem tip.
 void drawUmbrella(TFT_eSPI& tft, int x, int y, uint16_t colour) {
-  tft.fillSmoothCircle(x + 6, y + 5, 6, colour, theme::BG);
+  const int cx = x + 6;
+  tft.fillSmoothCircle(cx, y + 5, 6, colour, theme::BG);
   tft.fillRect(x - 1, y + 6, 14, 7, theme::BG);  // keep only the top half (the canopy)
-  tft.drawFastVLine(x + 6, y + 5, 7, colour);    // handle
-  tft.drawFastHLine(x + 4, y + 11, 2, colour);   // hook
+  tft.drawFastVLine(cx, y + 5, 7, colour);       // handle, centred on the canopy
+  tft.drawFastHLine(cx - 2, y + 11, 3, colour);  // hook, attached to the stem
+  tft.drawPixel(cx - 2, y + 10, colour);         // tip of the J
 }
 
 // The previous and next sun events around `now`, from today's and tomorrow's
@@ -249,47 +248,15 @@ void HomePage::drawGreeting(TFT_eSPI& tft, int hour) {
 }
 
 void HomePage::drawTime(TFT_eSPI& tft) {
-  // Clear the time + date area. Happens once a minute. The clock row stops
-  // short of the sunrise/sunset times; the date row stops short of the icon.
-  tft.fillRect(0, TIME_TOP, SUN_AREA_X, DATE_Y - TIME_TOP, theme::BG);
-  tft.fillRect(0, DATE_Y, LEFT_AREA_W, 22, theme::BG);
+  // Clear the date + clock area. Happens once a minute. Full width — sun
+  // events sit below the clock now, above the weather block.
+  tft.fillRect(0, DATE_Y - 2, tft.width(), TIME_TOP - DATE_Y + 2, theme::BG);
+  tft.fillRect(0, TIME_TOP, tft.width(), TIME_BASELINE - TIME_TOP + 8, theme::BG);
 
   struct tm now;
   const bool haveTime = timekeeping::ready() && timekeeping::localNow(now);
-  if (!haveTime) {
-    fonts::use(tft, fonts::Id::Clock);
-    tft.setTextDatum(L_BASELINE);
-    tft.setTextColor(theme::PANEL, theme::BG);
-    tft.drawString("--:--", MARGIN, TIME_BASELINE);
-    shownMinute_ = -2;  // "placeholder shown"
-  } else {
-    shownMinute_ = now.tm_hour * 60 + now.tm_min;
 
-    char digits[6];
-    if (settings_.clock24h) {
-      // 24-hour clock: "09:05", "13:07".
-      snprintf(digits, sizeof(digits), "%02d:%02d", now.tm_hour, now.tm_min);
-    } else {
-      // 12-hour clock: 0 -> 12 AM, 13 -> 1 PM.
-      int hour12 = now.tm_hour % 12;
-      if (hour12 == 0) hour12 = 12;
-      snprintf(digits, sizeof(digits), "%d:%02d", hour12, now.tm_min);
-    }
-
-    // Digits and AM/PM share a baseline, so their bottoms line up.
-    fonts::use(tft, fonts::Id::Clock);
-    tft.setTextDatum(L_BASELINE);
-    tft.setTextColor(theme::TEXT, theme::BG);
-    const int digitsWidth = tft.drawString(digits, MARGIN, TIME_BASELINE);
-
-    if (!settings_.clock24h) {
-      fonts::use(tft, fonts::Id::Medium);
-      tft.setTextColor(theme::CYAN, theme::BG);
-      tft.drawString(now.tm_hour < 12 ? "AM" : "PM", MARGIN + digitsWidth + 6, TIME_BASELINE);
-    }
-  }
-
-  // The row under the clock: the date, or the icon name during the icon test.
+  // Date sits above the clock (or the icon name during the icon test).
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TL_DATUM);
   if (demoStep_ >= 0) {
@@ -307,13 +274,47 @@ void HomePage::drawTime(TFT_eSPI& tft) {
     tft.drawString(WiFi.status() == WL_CONNECTED ? "Syncing time..." : "Waiting for Wi-Fi...",
                    MARGIN, DATE_Y);
   }
+
+  if (!haveTime) {
+    fonts::use(tft, fonts::Id::Clock);
+    tft.setTextDatum(L_BASELINE);
+    tft.setTextColor(theme::PANEL, theme::BG);
+    tft.drawString("--:--", MARGIN, TIME_BASELINE);
+    shownMinute_ = -2;  // "placeholder shown"
+    return;
+  }
+
+  shownMinute_ = now.tm_hour * 60 + now.tm_min;
+
+  char digits[6];
+  if (settings_.clock24h) {
+    // 24-hour clock: "09:05", "13:07".
+    snprintf(digits, sizeof(digits), "%02d:%02d", now.tm_hour, now.tm_min);
+  } else {
+    // 12-hour clock: 0 -> 12 AM, 13 -> 1 PM.
+    int hour12 = now.tm_hour % 12;
+    if (hour12 == 0) hour12 = 12;
+    snprintf(digits, sizeof(digits), "%d:%02d", hour12, now.tm_min);
+  }
+
+  // Digits and AM/PM share a baseline, so their bottoms line up.
+  fonts::use(tft, fonts::Id::Clock);
+  tft.setTextDatum(L_BASELINE);
+  tft.setTextColor(theme::TEXT, theme::BG);
+  const int digitsWidth = tft.drawString(digits, MARGIN, TIME_BASELINE);
+
+  if (!settings_.clock24h) {
+    fonts::use(tft, fonts::Id::Medium);
+    tft.setTextColor(theme::CYAN, theme::BG);
+    tft.drawString(now.tm_hour < 12 ? "AM" : "PM", MARGIN + digitsWidth + 6, TIME_BASELINE);
+  }
 }
 
 void HomePage::drawWeather(TFT_eSPI& tft) {
   shownWeather_ = weatherSignature();
-  // Clear the text area left of the icon (below the date row) and the icon itself.
-  tft.fillRect(WEATHER_TEXT_LEFT, DATE_Y + 22, ICON_X - WEATHER_TEXT_LEFT,
-               tft.height() - DATE_Y - 22, theme::BG);
+  // Clear the text area left of the icon (below the clock) and the icon itself.
+  tft.fillRect(WEATHER_TEXT_LEFT, WEATHER_CLEAR_Y, ICON_X - WEATHER_TEXT_LEFT,
+               tft.height() - WEATHER_CLEAR_Y, theme::BG);
   tft.fillRect(ICON_X, ICON_Y - 4, tft.width() - ICON_X, tft.height() - ICON_Y + 4, theme::BG);
 
   const WeatherReport& w = weather::current();

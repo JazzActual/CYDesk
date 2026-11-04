@@ -8,24 +8,25 @@ A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, 
    ```
    ┌──────────────────────────────────────┐
    │ Morning, Jazz!                       │  greeting (name from settings)
-   │                       ☀▲       ☀▼    │
-   │ 10:42 AM            7:19 AM  5:40 PM │  clock | previous + next sun event
    │ Wednesday, November 4                │  date (14 px)
-   │ ┌──────┐                 ┌────────┐  │
-   │ │ pet  │           64°   │  icon  │  │
-   │ │      │         ☂ 60%   │        │  │  chance of rain/snow this hour
-   │ └──────┘         90%RH   └────────┘  │  relative humidity
+   │ 10:42 AM                             │  clock
+   │                                      │
+   │ ┌──────┐              ☀▲ 7:19  ☀▼ 5:40│  previous + next sun (over weather)
+   │ │ pet  │           64°   │ icon │   │  72 px weather icon
+   │ │      │         ☂ 60%   │      │   │  chance of rain/snow this hour
+   │ └──────┘         90%RH   └──────┘   │  relative humidity
    └──────────────────────────────────────┘
    ```
    - Greeting by hour: Morning 5–11, Afternoon 12–16, Evening 17–21, "Up late, <name>?" otherwise.
    - Clock: 12-hour (default) or 24-hour, chosen on the settings page.
-   - Sun events: two columns in time order. The past event is muted and the next one is bright.
-     By day that's sunrise | sunset; after sunset it's sunset | tomorrow's sunrise; before
-     sunrise, yesterday's sunset is estimated as today's minus 24 h.
-   - Weather icon (`weather_icons.cpp`): 11 kinds drawn from smooth primitives. The sky layer is
-     a sun by day or a moon by night (moon phase placeholder until step 6), with cloud, rain,
-     snow, sleet, fog and lightning layers on top. `/icons` on the settings server steps through
-     every icon, day and night.
+   - Sun events: two columns above the weather block, right-aligned, in time order. The past
+     event is muted and the next one is bright. By day that's sunrise | sunset; after sunset
+     it's sunset | tomorrow's sunrise; before sunrise, yesterday's sunset is estimated as
+     today's minus 24 h.
+   - Weather icon (`weather_icons.cpp`): 11 kinds drawn from smooth primitives at 72×72 (designed
+     at 96 and scaled). The sky layer is a sun by day or a moon by night (moon phase placeholder
+     until step 6), with cloud, rain, snow, sleet, fog and lightning layers on top. `/icons` on
+     the settings server steps through every icon, day and night.
    - **Desk pet, bottom left (next up, see below).**
 2. **Hourly**: the next 12 hours as 6×2 tiles: hour, small icon, temperature, chance of rain.
    Credit "Weather by WeatherAPI.com" here.
