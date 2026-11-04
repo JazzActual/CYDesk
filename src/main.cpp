@@ -1,7 +1,7 @@
 // CYDesk — Step 4: Home page with clock, date and greeting
 //
 // Pages (tap anywhere for the next one):
-//   1. Home      greeting, clock, date (weather arrives in step 5)
+//   1. Home      greeting, clock, date, weather icon, temperature, humidity
 //   2. Hourly    placeholder until step 7
 //   3. Badge     placeholder until step 8
 //   4. Status    settings / Wi-Fi / weather diagnostics
@@ -64,10 +64,17 @@ void openWifiSetup(const char* reason) {
 }
 
 // Things that start once Wi-Fi is up: the settings page and the clock.
-void startNetworkServices() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (!settings_web::isRunning()) settings_web::begin(settings, weather::lastError());
+// Returns true once they're running (the weather waits for this, so the
+// clock's saved offset is loaded before the first weather update).
+bool startNetworkServices() {
+  static bool started = false;
+  if (!started && WiFi.status() != WL_CONNECTED) return false;
+  if (!settings_web::isRunning() && WiFi.status() == WL_CONNECTED) {
+    settings_web::begin(settings, weather::lastError());
+  }
   timekeeping::begin();  // only does anything the first time
+  started = true;
+  return true;
 }
 
 // Answers the settings page and reacts when its form is saved.
@@ -76,6 +83,10 @@ void serviceSettingsPage() {
   if (settings_web::takeChanged()) {
     weather::refreshSoon();  // ZIP/key/units may have changed
     pages.redraw();
+  }
+  if (settings_web::takeIconTestRequest()) {
+    pages.show(0);  // the Home page
+    homePage.startIconDemo();
   }
 }
 
@@ -105,7 +116,7 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk step 4: Home page");
+  Serial.println("\nCYDesk step 5: Home page weather");
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
@@ -144,9 +155,9 @@ void loop() {
       break;
   }
 
-  startNetworkServices();
+  const bool networkReady = startNetworkServices();
   serviceSettingsPage();
-  weather::update(settings);
+  if (networkReady) weather::update(settings);
   if (weather::takeChanged()) pages.dataChanged();
   updateHoldBar();
   pages.update();

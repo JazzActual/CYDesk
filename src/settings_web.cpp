@@ -12,6 +12,7 @@ Settings* settings = nullptr;
 const String* placeError = nullptr;
 bool running = false;
 bool changed = false;
+bool iconTestRequested = false;
 
 // Makes user text safe to put inside HTML (so a name like <b> can't break the page).
 String escapeHtml(const String& in) {
@@ -166,6 +167,11 @@ void begin(Settings& s, const String& error) {
   if (!routesAdded) {
     server.on("/", HTTP_GET, handleRoot);
     server.on("/save", HTTP_POST, handleSave);
+    server.on("/icons", HTTP_GET, [] {
+      iconTestRequested = true;
+      server.send(200, "text/plain",
+                  "Icon test started: the desk buddy shows every weather icon, 2 s each.");
+    });
     server.onNotFound([] {
       server.sendHeader("Location", "/");
       server.send(302);
@@ -195,6 +201,12 @@ bool isRunning() { return running; }
 
 void handle() {
   if (running) server.handleClient();
+}
+
+bool takeIconTestRequest() {
+  const bool was = iconTestRequested;
+  iconTestRequested = false;
+  return was;
 }
 
 bool takeChanged() {

@@ -31,6 +31,7 @@ class PageManager {
 
   void add(Page* page);
   void next();     // go to the following page (wraps around)
+  void show(size_t index);  // jump straight to a page
   void redraw();   // redraw the current page from scratch
   void update();   // pass loop() on to the current page
   void dataChanged();  // tell the current page new data arrived

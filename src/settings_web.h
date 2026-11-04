@@ -32,4 +32,8 @@ void handle();
 // (re-check the weather location, redraw the screen).
 bool takeChanged();
 
+// Returns true once after someone opened http://cydesk.local/icons
+// (starts the weather icon test on the Home page).
+bool takeIconTestRequest();
+
 }  // namespace settings_web

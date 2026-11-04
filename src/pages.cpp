@@ -21,6 +21,12 @@ void PageManager::next() {
   redraw();
 }
 
+void PageManager::show(size_t index) {
+  if (index >= count_) return;
+  current_ = index;
+  redraw();
+}
+
 void PageManager::redraw() {
   fonts::use(tft_, fonts::Id::BuiltIn);  // pages that want smooth fonts load their own
   if (count_ > 0) pages_[current_]->draw(tft_);
