@@ -116,7 +116,7 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-  Serial.println("\nCYDesk step 5: Home page weather");
+  Serial.println("\nCYDesk: desk pet");
 
   tft.init();
   tft.setRotation(SCREEN_ROTATION);

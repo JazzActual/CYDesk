@@ -123,6 +123,14 @@ void StatusPage::draw(TFT_eSPI& tft) {
   row("Units", String(settings_.fahrenheit ? "Fahrenheit" : "Celsius") +
                    (settings_.clock24h ? ", 24-hour clock" : ", 12-hour clock"), theme::TEXT);
   row("Badge", settings_.badgeUrl, theme::TEXT);
+  const char* animal = "None";
+  if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Fox)) animal = "Fox";
+  else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon)) animal = "Raccoon";
+  else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Owl)) animal = "Owl";
+  const char* mode = "Off";
+  if (settings_.petMode == static_cast<uint8_t>(PetMode::Idle)) mode = "Idle";
+  else if (settings_.petMode == static_cast<uint8_t>(PetMode::Reacts)) mode = "Reacts";
+  row("Pet", String(animal) + ", " + mode, theme::TEXT);
 
   tft.setTextColor(theme::MUTED, theme::BG);
   tft.setTextDatum(BC_DATUM);

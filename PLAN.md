@@ -44,7 +44,8 @@ A desk buddy for the E32R28T 2.8" ESP32 touchscreen (240×320, ESP32-WROOM-32E, 
   rain/snow chance is over 50% > sunglasses when it's sunny (clear by day) > idle.
   The idle animation is a blink or small wiggle, swapping frames every ~0.5 s and redrawing only
   the pet's corner from an off-screen sprite.
-- Setting: **Desk pet: Off / Idle / Reacts to weather**, plus the animal choice.
+- Setting: **Desk pet: Off / Idle / Reacts to weather**, plus the animal (None / Fox / Raccoon / Owl).
+  Default is a fox that reacts, so the corner isn't empty before setup.
 - More reactions can come later (e.g. a scarf below freezing).
 - The approved pixel designs live in the local preview script (see `CLAUDE.local.md`). Port them
   as-is.
@@ -89,7 +90,7 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 3. [x] Setup: Wi-Fi-only portal, settings page at cydesk.local with a QR code, ZIP + WeatherAPI key check
 4. [x] Home: clock, date, greeting in Rajdhani smooth fonts (tools/make_fonts.py); clock offset from WeatherAPI, saved in flash
 5. [x] Weather on Home: icon set (+ /icons test), temperature, rain chance, %RH, sunrise/sunset
-5b. [ ] Desk pet: fox / raccoon / owl, reactions, settings (Off / Idle / Reacts + animal)
+5b. [x] Desk pet: fox / raccoon / owl / none, reactions, settings (Off / Idle / Reacts + animal)
 6. [ ] Moon phase with the weather layers drawn on top
 7. [ ] Hourly page
 8. [ ] Badge page (wsrv.nl → TJpg_Decoder)

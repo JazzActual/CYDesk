@@ -3,6 +3,7 @@
 #include <WiFi.h>
 
 #include "fonts.h"
+#include "pet.h"
 #include "theme.h"
 #include "timekeeping.h"
 #include "weather_icons.h"
@@ -164,6 +165,7 @@ void HomePage::draw(TFT_eSPI& tft) {
   drawTime(tft);
   drawWeather(tft);
   drawSunEvents(tft);
+  pet::draw(tft, settings_);
 }
 
 void HomePage::startIconDemo() {
@@ -233,6 +235,7 @@ void HomePage::update(TFT_eSPI& tft) {
   if (haveTime && now.tm_hour * 60 + now.tm_min != shownMinute_) drawTime(tft);
   if (!haveTime && shownMinute_ == -1) drawTime(tft);  // e.g. icon test step, before time sync
   if (haveTime) drawGreeting(tft, now.tm_hour);  // only redraws if the text changed
+  pet::update(tft, settings_);
 }
 
 void HomePage::drawGreeting(TFT_eSPI& tft, int hour) {

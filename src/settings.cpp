@@ -16,6 +16,10 @@ void Settings::load() {
   badgeUrl   = prefs.getString("badge", "");
   fahrenheit = prefs.getBool("fahrenheit", true);
   clock24h   = prefs.getBool("clock24h", false);
+  petAnimal  = prefs.getUChar("pet", static_cast<uint8_t>(PetAnimal::Fox));
+  petMode    = prefs.getUChar("petmode", static_cast<uint8_t>(PetMode::Reacts));
+  if (petAnimal > static_cast<uint8_t>(PetAnimal::Owl)) petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
+  if (petMode > static_cast<uint8_t>(PetMode::Reacts)) petMode = static_cast<uint8_t>(PetMode::Reacts);
   placeLabel = prefs.getString("place", "");
   prefs.end();
 }
@@ -29,6 +33,8 @@ void Settings::save() const {
   prefs.putString("badge", badgeUrl);
   prefs.putBool("fahrenheit", fahrenheit);
   prefs.putBool("clock24h", clock24h);
+  prefs.putUChar("pet", petAnimal);
+  prefs.putUChar("petmode", petMode);
   prefs.putString("place", placeLabel);
   prefs.remove("city");  // left over from before the switch to ZIP codes
   prefs.end();

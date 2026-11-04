@@ -59,7 +59,7 @@ void handleRoot() {
   const bool checking = s.isComplete() && s.placeLabel.isEmpty() && placeError->isEmpty();
 
   String html;
-  html.reserve(4096);
+  html.reserve(5600);
   html += FPSTR(PAGE_HEAD);
   // While the board is still checking the ZIP/key, reload every 3 s to show the result.
   if (justSaved && checking) html += "<meta http-equiv='refresh' content='3;url=/?saved=1'>";
@@ -115,6 +115,26 @@ void handleRoot() {
   html += String("<label><input type='radio' name='clock' value='24'") +
           (s.clock24h ? " checked" : "") + "> 24-hour (13:07)</label></div>";
 
+  html += "<label>Desk pet</label><div class='units'>";
+  html += String("<label><input type='radio' name='petmode' value='off'") +
+          (s.petMode == static_cast<uint8_t>(PetMode::Off) ? " checked" : "") + "> Off</label>";
+  html += String("<label><input type='radio' name='petmode' value='idle'") +
+          (s.petMode == static_cast<uint8_t>(PetMode::Idle) ? " checked" : "") + "> Idle</label>";
+  html += String("<label><input type='radio' name='petmode' value='reacts'") +
+          (s.petMode == static_cast<uint8_t>(PetMode::Reacts) ? " checked" : "") +
+          "> Reacts to weather</label></div>";
+  html += "<div class='hint'>Reacts: asleep at night, umbrella in the rain, sunglasses when it's clear.</div>";
+
+  html += "<label>Animal</label><div class='units'>";
+  html += String("<label><input type='radio' name='pet' value='none'") +
+          (s.petAnimal == static_cast<uint8_t>(PetAnimal::None) ? " checked" : "") + "> None</label>";
+  html += String("<label><input type='radio' name='pet' value='fox'") +
+          (s.petAnimal == static_cast<uint8_t>(PetAnimal::Fox) ? " checked" : "") + "> Fox</label>";
+  html += String("<label><input type='radio' name='pet' value='raccoon'") +
+          (s.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon) ? " checked" : "") + "> Raccoon</label>";
+  html += String("<label><input type='radio' name='pet' value='owl'") +
+          (s.petAnimal == static_cast<uint8_t>(PetAnimal::Owl) ? " checked" : "") + "> Owl</label></div>";
+
   html += "<button type='submit'>Save to desk buddy</button></form>";
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
   html += "</body></html>";
@@ -141,14 +161,23 @@ void handleSave() {
   s.badgeUrl = extractImageUrl(server.arg("badge"));
   s.fahrenheit = server.arg("units") != "C";
   s.clock24h = server.arg("clock") == "24";
+  const String mode = server.arg("petmode");
+  s.petMode = mode == "off" ? static_cast<uint8_t>(PetMode::Off)
+            : mode == "idle" ? static_cast<uint8_t>(PetMode::Idle)
+                             : static_cast<uint8_t>(PetMode::Reacts);
+  const String animal = server.arg("pet");
+  s.petAnimal = animal == "none" ? static_cast<uint8_t>(PetAnimal::None)
+              : animal == "raccoon" ? static_cast<uint8_t>(PetAnimal::Raccoon)
+              : animal == "owl" ? static_cast<uint8_t>(PetAnimal::Owl)
+                                : static_cast<uint8_t>(PetAnimal::Fox);
   s.save();
   changed = true;
 
   // Never print the key itself, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s badge=%s\n",
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s badge=%s pet=%u mode=%u\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
                 s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
-                s.badgeUrl.length() ? "set" : "none");
+                s.badgeUrl.length() ? "set" : "none", s.petAnimal, s.petMode);
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

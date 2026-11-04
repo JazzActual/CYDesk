@@ -6,6 +6,9 @@
 #pragma once
 #include <Arduino.h>
 
+enum class PetAnimal : uint8_t { None = 0, Fox = 1, Raccoon = 2, Owl = 3 };
+enum class PetMode : uint8_t { Off = 0, Idle = 1, Reacts = 2 };
+
 struct Settings {
   String name;             // used in the greeting: "Morning, <name>!"
   String zip;              // weather location (US ZIP / postcode), e.g. "60601"
@@ -13,6 +16,11 @@ struct Settings {
   String badgeUrl;         // image address taken from the pasted badge HTML
   bool fahrenheit = true;  // false = Celsius
   bool clock24h = false;   // true = "13:07", false = "1:07 PM"
+
+  // Desk pet. Defaults show a fox that reacts, so there's something on screen
+  // before the settings page is opened.
+  uint8_t petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
+  uint8_t petMode = static_cast<uint8_t>(PetMode::Reacts);
 
   // Filled in once WeatherAPI confirms the ZIP, e.g. "Chicago, Illinois".
   // Empty = not checked yet (or ZIP/key changed since).
