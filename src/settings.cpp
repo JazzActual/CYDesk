@@ -43,12 +43,16 @@ void Settings::load() {
   theme::setAccent(accent);
   placeLabel = prefs.getString("place", "");
   const bool dropBadge = prefs.isKey("badge");
+  // Nearby-name alerts were removed: Bluetooth left too little memory for HTTPS.
+  const bool dropBle = prefs.isKey("blenames");
   prefs.end();
-  // Drop a picture address saved by an older version. One write, then it's gone.
-  if (dropBadge) {
+  // Drop a picture address saved by an older version, and any saved name list.
+  // One write, then it's gone.
+  if (dropBadge || dropBle) {
     Preferences wipe;
     wipe.begin(NVS_NAMESPACE, /*readOnly=*/false);
-    wipe.remove("badge");
+    if (dropBadge) wipe.remove("badge");
+    if (dropBle) wipe.remove("blenames");
     wipe.end();
   }
 }
@@ -66,6 +70,7 @@ void Settings::save() const {
   prefs.putString("warduser", wardriftUser);
   prefs.putString("wardpass", wardriftPass);
   prefs.putString("ghrepos", githubRepos);
+  prefs.remove("blenames");
   prefs.remove("wardkey");  // an upload key cannot read the dashboard
   prefs.putUShort("wiglmin", wigleMinute);
   prefs.putBool("fahrenheit", fahrenheit);

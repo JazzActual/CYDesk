@@ -208,17 +208,19 @@ void loop() {
   }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
-  // One HTTPS download at a time. Weather, then WDGWars, then WiGLE, then Wardrift,
+  // One download at a time: weather, then WDGWars, then WiGLE, then Wardrift,
   // then one GitHub repo.
-  const bool wantWeather = settings.screenOn(ScreenHome) || settings.screenOn(ScreenHourly) ||
-                           settings.screenOn(ScreenStatus);
-  if (networkReady && wantWeather) weather::update(settings);
-  if (weather::takeChanged()) pages.dataChanged();
-  if (networkReady && settings.screenOn(ScreenBadge)) wdg::update(settings);
-  if (networkReady && settings.screenOn(ScreenWigle)) wigle::update(settings);
-  if (networkReady && settings.screenOn(ScreenWardrift)) wardrift::update(settings);
-  if (networkReady && (settings.screenOn(ScreenStars) || settings.screenOn(ScreenRepos))) {
-    github::update(settings);
+  if (networkReady) {
+    const bool wantWeather = settings.screenOn(ScreenHome) || settings.screenOn(ScreenHourly) ||
+                             settings.screenOn(ScreenStatus);
+    if (wantWeather) weather::update(settings);
+    if (weather::takeChanged()) pages.dataChanged();
+    if (settings.screenOn(ScreenBadge)) wdg::update(settings);
+    if (settings.screenOn(ScreenWigle)) wigle::update(settings);
+    if (settings.screenOn(ScreenWardrift)) wardrift::update(settings);
+    if (settings.screenOn(ScreenStars) || settings.screenOn(ScreenRepos)) github::update(settings);
+  } else if (weather::takeChanged()) {
+    pages.dataChanged();
   }
   updateHoldBar();
   pages.update();

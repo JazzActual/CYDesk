@@ -142,13 +142,13 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 
 ## Next batch (added 2026-11-04, not started)
 
-Do the screen toggles first, so each new page can be switched off as it lands. BLE is last: it shares the radio with Wi-Fi.
+Do the screen toggles first, so each new page can be switched off as it lands.
 
 11. [x] **WiGLE stats page.** Rank, month rank, and discovery counts (Wi-Fi, cell, Bluetooth, this month) from a read-only `GET /api/v2/stats/user`. API name and token are HTTP Basic auth, stored in flash, never printed. One successful check per day, at a time chosen on the settings page. Counts on this page and the WDGWars badge are shortened (1.2k, 12.5k, 1.25M). Empty state when no login is saved.
 12. [x] **Bear** on the desk pet list, same 20×20 mirrored left-half style as the fox, raccoon, and owl (tail overlay, shared accessories). Chosen next to the other animals on the settings page.
 13. [x] **Toggle screens.** Home, Hourly, Badge, WiGLE, Wardrift, Stars, and Repos each have a checkbox on the settings page and are skipped when off, including their fetch. Status always stays in the cycle. A page that is on but has no key still shows its empty state. If every box is cleared, Home stays on so the desk always has a page.
 14. [x] **GitHub star tracker.** Up to four public `owner/repo` names. `GET /repos/<owner>/<repo>` returns `stargazers_count` with no token (60 requests an hour; a few repos every 15 minutes fits). Stars is the first repo as a big count, with the address and a daily line. Repos is the list, shown once a second repo is saved. One request at a time. A failed check keeps the last count. A token for private repos was left out.
-15. [ ] **BLE alerts.** The settings page holds a list of device names or prefixes the user cares about (Axon cameras are the example). The board passive-scans advertisements and shows an alert when one of those names is heard, then clears it after the device goes quiet. Only those matches are kept; the scan does not store or print every device nearby. Wi-Fi and BLE share one radio, so the scan pauses around the HTTPS fetches and must not stall touch. Draw the alert layout as a preview before putting it on the board.
+15. [x] **BLE alerts, dropped.** A nearby-name card was previewed and flashed. Bluetooth and Wi-Fi share the radio, and keeping both up either reboots the board or leaves about 60 KB free, which is not enough for the HTTPS downloads. The card, the settings box, and the saved name list were removed.
 16. [x] **Accent color.** A color picker on the settings page, saved in flash, default cyan (`#00e5ff`). It replaces the cyan accent on every page, including the settings page itself (the page updates as the picker moves). Pink (`#ff2d95`) stays the second accent.
 
 ## Look

@@ -50,8 +50,8 @@ void onWifiEvent(arduino_event_id_t event, arduino_event_info_t info) {
 
 void holdWifiPolicy() {
   WiFi.setAutoReconnect(true);
-  // A desk display is plugged in. Power-save makes some mesh systems decide
-  // the board has left and refuse to hand it to another node.
+  // A desk display is plugged in. Full power-save makes some mesh systems
+  // decide the board has left, so stay awake.
   WiFi.setSleep(false);
   // Look at every channel and pick the strongest node with this name.
   // The default stops at the first node it hears.
