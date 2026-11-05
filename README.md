@@ -9,7 +9,7 @@
 
 A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and a few optional accounts. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
 
-The 2.8" board is the one this was built and tested on.
+As of 11/5/2026 CYDesk has only been tested on the 2.8 inch CYD. Plans to add support for the 3.5" and 4.0" CYD soon.
 
 ## Put it on a board
 
