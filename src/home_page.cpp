@@ -76,6 +76,15 @@ String greetingFor(int hour, const String& name) {
   return named ? "Up late, " + name + "?" : String("Up late?");
 }
 
+// "" while the weather on screen is current. "offline" when Wi-Fi is down,
+// "stale" when the last download failed and the previous numbers are still up.
+const char* freshnessMark() {
+  if (!weather::current().ok) return "";
+  if (WiFi.status() != WL_CONNECTED) return "offline";
+  if (weather::stale()) return "stale";
+  return "";
+}
+
 // "7:19 AM" or "07:19", in local time.
 String formatClock(time_t t, bool use24h) {
   struct tm lt;
@@ -257,6 +266,7 @@ void HomePage::update(TFT_eSPI& tft) {
   }
   if (weatherSignature() != shownWeather_) drawWeather(tft);
   if (sunSignature() != shownSun_) drawSunEvents(tft);
+  if (shownFreshness_ != (demoStep_ < 0 ? freshnessMark() : "")) drawTime(tft);
 
   struct tm now;
   const bool haveTime = shownReady_ && timekeeping::localNow(now);
@@ -304,6 +314,15 @@ void HomePage::drawTime(TFT_eSPI& tft) {
     tft.setTextColor(theme::MUTED, theme::BG);
     tft.drawString(WiFi.status() == WL_CONNECTED ? "Syncing time..." : "Waiting for Wi-Fi...",
                    MARGIN, DATE_Y);
+  }
+
+  // Right end of the date line. Hidden during the icon test, which uses that row.
+  const char* mark = demoStep_ < 0 ? freshnessMark() : "";
+  shownFreshness_ = mark;
+  if (mark[0] != '\0' && haveTime) {
+    tft.setTextDatum(TR_DATUM);
+    tft.setTextColor(theme::MUTED, theme::BG);
+    tft.drawString(mark, tft.width() - MARGIN, DATE_Y);
   }
 
   if (!haveTime) {

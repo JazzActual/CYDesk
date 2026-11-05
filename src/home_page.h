@@ -44,6 +44,7 @@ class HomePage : public Page {
   Mode shownMode_ = Mode::Clock;
   bool shownReady_ = false;
   int shownMinute_ = -1;   // minute-of-day currently on screen
+  String shownFreshness_;  // "" , "stale", or "offline" on the date line
   String shownGreeting_;
   String shownWeather_;
   String shownSun_;

@@ -11,7 +11,7 @@
 #pragma once
 #include <TFT_eSPI.h>
 
-constexpr const char* PORTAL_AP_NAME = "DeskBuddy-Setup";
+constexpr const char* PORTAL_AP_NAME = "CYDesk";
 constexpr int PORTAL_TIMEOUT_S = 300;  // 5 minutes
 
 // Shows instructions on screen and runs the portal.

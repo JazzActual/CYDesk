@@ -28,4 +28,7 @@ const WeatherReport& current();
 // Why the most recent fetch failed ("" if it worked).
 const String& lastError();
 
+// True when a later fetch failed and the numbers on screen are the previous ones.
+bool stale();
+
 }  // namespace weather

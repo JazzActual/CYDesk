@@ -1,6 +1,7 @@
 #include "hourly_page.h"
 
 #include <math.h>
+#include <WiFi.h>
 
 #include "fonts.h"
 #include "theme.h"
@@ -49,6 +50,7 @@ uint32_t HourlyPage::signature() const {
   };
   mix(settings_.fahrenheit);
   mix(settings_.clock24h);
+  mix(WiFi.status() != WL_CONNECTED ? 2u : weather::stale() ? 1u : 0u);
   mix(isnan(w.moonPhase) ? 0 : (uint32_t)lroundf(w.moonPhase * 100.0f));
   const int start = firstHour(w);
   const int count = max(0, min(TILES, w.hourCount - start));
@@ -126,5 +128,10 @@ void HourlyPage::draw(TFT_eSPI& tft) {
   tft.setTextDatum(BC_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
   tft.drawString("Weather by WeatherAPI.com", tft.width() / 2, tft.height() - 4);
+  const char* mark = WiFi.status() != WL_CONNECTED ? "offline" : weather::stale() ? "stale" : "";
+  if (mark[0] != '\0') {
+    tft.setTextDatum(BR_DATUM);
+    tft.drawString(mark, tft.width() - 8, tft.height() - 4);
+  }
   Serial.printf("[hourly] drew %d hours in %lu ms\n", count, millis() - started);
 }

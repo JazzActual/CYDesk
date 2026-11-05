@@ -6,7 +6,7 @@
 //   │ 64°    63°    61°    59°    57°    55° │
 //   │ 10%    20%    40%    70%    80%    60% │  chance of rain/snow
 //   │ 8 PM   ...                             │
-//   │         Weather by WeatherAPI.com      │
+//   │         Weather by WeatherAPI.com      │  "stale" or "offline" at the right
 //   └──────────────────────────────────────┘
 //
 // The hours are already in the weather report. This page only draws them.

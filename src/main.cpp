@@ -11,7 +11,7 @@
 //   8. Status    settings / Wi-Fi / weather diagnostics
 //
 // Setup happens in two parts:
-//   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (DeskBuddy-Setup).
+//   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (CYDesk).
 //      Holding a finger on the screen for 5 seconds reopens it.
 //   2. On the home Wi-Fi, the board serves a settings page at
 //      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key,

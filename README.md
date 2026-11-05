@@ -19,7 +19,7 @@ Installing the wrong size will not damage the board. The picture will look wrong
 
 ## First boot
 
-If the board has no Wi-Fi saved, it opens a network called `DeskBuddy-Setup`. Join that from a phone or computer and pick your own network. It has to be **2.4 GHz**. The portal only asks for the network. Everything else is on the settings page, because a phone closes that mini-browser as soon as you switch apps.
+If the board has no Wi-Fi saved, it opens a network called `CYDesk`. Join that from a phone or computer and pick your own network. It has to be **2.4 GHz**. The portal only asks for the network. Everything else is on the settings page, because a phone closes that mini-browser as soon as you switch apps.
 
 When it is on your Wi-Fi, the screen shows a QR code until setup is finished. The code opens the settings page on the board (also at `http://cydesk.local`, or the IP address printed on the screen). The QR code uses the IP address, because `.local` names can take a few seconds to look up.
 

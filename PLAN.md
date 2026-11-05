@@ -81,7 +81,7 @@ Holding a finger on the screen for about 5 seconds reopens the Wi-Fi portal.
 ## Settings: two-part setup
 
 1. **Wi-Fi portal** (`portal.cpp`, WiFiManager): opens when no Wi-Fi is saved, or after a
-   5-second hold. The board starts a network called `DeskBuddy-Setup`, and the page that opens
+   5-second hold. The board starts a network called `CYDesk`, and the page that opens
    on the phone asks only for the home Wi-Fi network and password (2.4 GHz).
    *Why it's kept this small:* the iPhone shows this page in a mini-browser that closes, and
    leaves the network, as soon as you switch apps. So it must never need copying and pasting.
@@ -137,7 +137,7 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 6. [x] Moon phase with the weather layers drawn on top
 7. [x] Hourly page
 8. [ ] Badge page: WDGWars stats from a saved key
-9. [ ] Polish: offline/stale markers, memory check, fallbacks, optional 4-digit code for the settings page, Wi-Fi portal: the page is slow to pop up after joining DeskBuddy-Setup (the phone's connectivity checks hit "request handler not found"; try answering them directly or pre-scanning networks before opening the access point)
+9. [ ] Polish: offline/stale markers, memory check, fallbacks. A 4-digit code for the settings page was considered and dropped. Wi-Fi portal: the page is slow to pop up after joining CYDesk (the phone's connectivity checks hit "request handler not found"; answer those checks directly and scan for networks in the background).
 10. [ ] Later: picture badge again. An image embed or a bare image address, fitted through wsrv.nl and drawn with TJpg_Decoder. Shown when no WDGWars key is saved. Taken out so the badge page is WDGWars only for now.
 
 ## Next batch (added 2026-11-04, not started)

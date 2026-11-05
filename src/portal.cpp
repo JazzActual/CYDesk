@@ -53,6 +53,37 @@ bool runWifiPortal(TFT_eSPI& tft, const char* reason) {
   wm.setMenu(menu);                       // hide the advanced/debug buttons
   wm.setConfigPortalTimeout(PORTAL_TIMEOUT_S);
 
+  // A phone checks a handful of "is there internet?" addresses before it
+  // shows the setup page. Those used to miss every handler, so the phone
+  // retried for several seconds. Answer them with a short page that opens
+  // the setup menu. The network list is scanned in the background so that
+  // page is ready when the phone asks for it.
+  wm._preloadwifiscan = true;
+  wm._asyncScan = true;
+  wm.setWebServerCallback([&wm]() {
+    const auto answer = [&wm]() {
+      wm.server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      wm.server->send(200, "text/html",
+                      "<!DOCTYPE html><html><head>"
+                      "<meta http-equiv=\"refresh\" content=\"0;url=http://192.168.4.1/\">"
+                      "<title>CYDesk</title></head><body>"
+                      "<a href=\"http://192.168.4.1/\">Set up CYDesk Wi-Fi</a>"
+                      "</body></html>");
+    };
+    const char* probes[] = {
+        "/generate_204",
+        "/gen_204",
+        "/hotspot-detect.html",
+        "/canonical.html",
+        "/connecttest.txt",
+        "/ncsi.txt",
+        "/success.txt",
+        "/redirect",
+        "/fwlink",
+    };
+    for (const char* path : probes) wm.server->on(path, answer);
+  });
+
   // Blocks until the board joins a network, Exit is pressed, or the timeout.
   // An open network (no password) keeps setup simple; the timeout stops it
   // hanging around forever.

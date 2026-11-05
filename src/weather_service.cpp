@@ -66,5 +66,6 @@ bool takeChanged() {
 
 const WeatherReport& current() { return lastGood; }
 const String& lastError() { return error; }
+bool stale() { return lastGood.ok && error.length() > 0; }
 
 }  // namespace weather
