@@ -34,7 +34,12 @@ class PageManager {
   // If the visible page was just switched off, move to the next one that is on.
   void settle();
   void next();     // go to the following page that is switched on (wraps around)
+  // A tap advances. Once the current page has been up for 30 seconds, a tap
+  // returns to Home instead. On Home itself, a tap still advances.
+  void tap();
   void show(size_t index);  // jump straight to a page
+  // Restart the 30 second tap timer without changing the page.
+  void keepPage();
   void redraw();   // redraw the current page from scratch
   void update();   // pass loop() on to the current page
   void dataChanged();  // tell the current page new data arrived
@@ -48,6 +53,7 @@ class PageManager {
   bool enabled_[MAX_PAGES] = {};
   size_t count_ = 0;
   size_t current_ = 0;
+  uint32_t shownAt_ = 0;  // millis() when this page appeared
 };
 
 // Diagnostics: Wi-Fi, the weather check, and the largest free memory block.

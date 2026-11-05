@@ -91,6 +91,7 @@ void openWifiSetup(const char* reason) {
   if (!connected && hasSavedWifi()) connectSavedWifi();
   tft.setRotation(SCREEN_ROTATION);
   pages.redraw();
+  pages.keepPage();
 }
 
 // Things that start once Wi-Fi is up: the settings page and the clock.
@@ -189,7 +190,7 @@ void setup() {
 void loop() {
   switch (touch.poll()) {
     case TouchEvent::Tap:
-      pages.next();
+      pages.tap();
       break;
     case TouchEvent::LongPress:
       openWifiSetup("Wi-Fi setup");

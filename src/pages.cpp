@@ -32,18 +32,39 @@ void PageManager::next() {
     const size_t index = (current_ + step) % count_;
     if (!enabled_[index]) continue;
     if (index == current_) return;
-    current_ = index;
-    Serial.printf("[pages] -> %s\n", pages_[current_]->name());
-    redraw();
+    show(index);
     return;
   }
+}
+
+void PageManager::tap() {
+  if (count_ == 0) return;
+  // Home is the first page. If it is switched off, the first page that is on.
+  size_t home = 0;
+  if (!enabled_[0]) {
+    for (size_t i = 1; i < count_; i++) {
+      if (!enabled_[i]) continue;
+      home = i;
+      break;
+    }
+  }
+  const bool rested = static_cast<uint32_t>(millis() - shownAt_) >= 30 * 1000;
+  if (rested && current_ != home && enabled_[home]) {
+    show(home);
+    return;
+  }
+  next();
 }
 
 void PageManager::show(size_t index) {
   if (index >= count_) return;
   current_ = index;
+  Serial.printf("[pages] -> %s\n", pages_[current_]->name());
   redraw();
+  shownAt_ = millis();
 }
+
+void PageManager::keepPage() { shownAt_ = millis(); }
 
 void PageManager::redraw() {
   fonts::use(tft_, fonts::Id::BuiltIn);  // pages that want smooth fonts load their own
