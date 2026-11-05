@@ -1,4 +1,11 @@
-# CYDesk
+```
+ ██████╗██╗   ██╗██████╗ ███████╗███████╗██╗  ██╗
+██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔════╝██║ ██╔╝
+██║      ╚████╔╝ ██║  ██║█████╗  ███████╗█████╔╝ 
+██║       ╚██╔╝  ██║  ██║██╔══╝  ╚════██║██╔═██╗ 
+╚██████╗   ██║   ██████╔╝███████╗███████║██║  ██╗
+ ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝
+```
 
 A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and a few optional accounts. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
 
@@ -16,6 +23,44 @@ Open the installer in **Chrome, Edge, or Firefox** on a computer (not a phone, a
 4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys.
 
 Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.
+
+## Pages
+
+Tap anywhere to go to the next one. It wraps around. After a page has been up for 30 seconds, a tap returns to Home. On Home, a tap still moves on. On the settings page, uncheck a screen to skip it. Status always stays in the cycle. If every other box is cleared, Home stays on.
+
+1. **Home.** Greeting, date, and clock. The greeting follows the hour: morning, afternoon, evening, or "Up late". Sunrise and sunset sit above the weather, in time order, with the next one bright and the one that already passed muted. Temperature, the chance of rain, humidity, and a weather icon. By day the sun is drawn for clear and partly cloudy. At night every icon uses the moon phase from the forecast. The desk pet sits in the bottom-left corner.
+
+   ![Home](docs/screens/home.png)
+
+2. **Hourly.** The next 12 hours as tiles: hour, icon, temperature, and chance of rain. The current hour uses the accent color. "Weather by WeatherAPI.com" sits along the bottom.
+
+   ![Hourly](docs/screens/hourly.png)
+
+3. **Badge.** One [WDGWars](https://wdgwars.pl/) account: name, gang, badge count, total, Wi-Fi, BLE, aircraft, mesh, and today plus the last 7 days. Asks for a key when none is saved. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
+
+   ![Badge](docs/screens/badge.png)
+
+4. **WiGLE.** Rank, month rank, and discovery counts (Wi-Fi, cell, Bluetooth, and this month) from a read-only [WiGLE](https://wigle.net/) stats request. The API name and token are saved on the board. One successful check per day, at a time you pick (default 4:00). If the desk is off then, it checks the next time it is on. The last numbers stay up until the next check.
+
+   ![WiGLE](docs/screens/wigle.png)
+
+5. **Wardrift.** One [wardrift.net](https://wardrift.net/) character: name, faction, level, class, networks, routes, threats, and a streak when there is one. The upload API key cannot read the dashboard, so the desk signs in with the username and password. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
+
+   ![Wardrift](docs/screens/wardrift.png)
+
+6. **Stars.** The first public GitHub repo in the list, as a big star count, with the repo address along the bottom. A thin line of one point per day appears once two local days have been saved (up to about three weeks). No token. Public repos only, written as `owner/repo`.
+
+   ![Stars](docs/screens/stars.png)
+
+7. **Repos.** The same repos as a list, name and count, once a second repo is saved. With only one, this page says to add another. Up to four repos. One request at a time, about every 15 minutes. A failed check keeps the last count.
+
+   ![Repos](docs/screens/repos.png)
+
+8. **Status.** Whether Wi-Fi is up, the weather check, and how much memory is free for a download. This page cannot be turned off.
+
+   ![Status](docs/screens/status.png)
+
+Big counts are shortened (1.2k, 12.5k, 1.25M). A page that is on but has nothing saved shows its empty message instead of disappearing. The pictures above use sample names and numbers.
 
 ## First boot
 
@@ -36,21 +81,6 @@ Those stay on the board. They are not in this repo, and the keys and passwords a
 Two boards on the same Wi-Fi both answer to `cydesk.local`. The QR code uses the IP address, which still works.
 
 Hold a finger on the screen for about five seconds any time you want to change the Wi-Fi network. A dropped link does not open the portal by itself. On a mesh, the board looks for any node of the saved network name, not only the first radio it joined.
-
-## Pages
-
-Tap anywhere to go to the next one. It wraps around. After a page has been up for 30 seconds, a tap returns to Home. On Home, a tap still moves on. On the settings page, uncheck a screen to skip it. Status always stays in the cycle. If every other box is cleared, Home stays on.
-
-1. **Home.** Greeting, date, and clock. The greeting follows the hour: morning, afternoon, evening, or "Up late". Sunrise and sunset sit above the weather, in time order, with the next one bright and the one that already passed muted. Temperature, the chance of rain, humidity, and a weather icon. By day the sun is drawn for clear and partly cloudy. At night every icon uses the moon phase from the forecast. The desk pet sits in the bottom-left corner.
-2. **Hourly.** The next 12 hours as tiles: hour, icon, temperature, and chance of rain. The current hour uses the accent color. "Weather by WeatherAPI.com" sits along the bottom.
-3. **Badge.** One [WDGWars](https://wdgwars.pl/) account: name, gang, badge count, total, Wi-Fi, BLE, aircraft, mesh, and today plus the last 7 days. Asks for a key when none is saved. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
-4. **WiGLE.** Rank, month rank, and discovery counts (Wi-Fi, cell, Bluetooth, and this month) from a read-only [WiGLE](https://wigle.net/) stats request. The API name and token are saved on the board. One successful check per day, at a time you pick (default 4:00). If the desk is off then, it checks the next time it is on. The last numbers stay up until the next check.
-5. **Wardrift.** One [wardrift.net](https://wardrift.net/) character: name, faction, level, class, networks, routes, threats, and a streak when there is one. The upload API key cannot read the dashboard, so the desk signs in with the username and password. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
-6. **Stars.** The first public GitHub repo in the list, as a big star count, with the repo address along the bottom. A thin line of one point per day appears once two local days have been saved (up to about three weeks). No token. Public repos only, written as `owner/repo`.
-7. **Repos.** The same repos as a list, name and count, once a second repo is saved. With only one, this page says to add another. Up to four repos. One request at a time, about every 15 minutes. A failed check keeps the last count.
-8. **Status.** Whether Wi-Fi is up, the weather check, and how much memory is free for a download. This page cannot be turned off.
-
-Big counts are shortened (1.2k, 12.5k, 1.25M). A page that is on but has nothing saved shows its empty message instead of disappearing.
 
 ## Desk pet
 
