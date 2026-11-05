@@ -6,14 +6,16 @@
 //   3. Badge     WDGWars stats
 //   4. WiGLE     rank and discovery counts
 //   5. Wardrift  character level and wardrive counts
-//   6. Status    settings / Wi-Fi / weather diagnostics
+//   6. Stars     first GitHub repo, big count and daily line
+//   7. Repos     the list of GitHub repos, once two or more are saved
+//   8. Status    settings / Wi-Fi / weather diagnostics
 //
 // Setup happens in two parts:
 //   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (DeskBuddy-Setup).
 //      Holding a finger on the screen for 5 seconds reopens it.
 //   2. On the home Wi-Fi, the board serves a settings page at
 //      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key,
-//      WiGLE login, Wardrift username and password, and units.
+//      WiGLE login, Wardrift username and password, GitHub repos, and units.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -21,6 +23,8 @@
 
 #include "badge_page.h"
 #include "fonts.h"
+#include "github_page.h"
+#include "github_service.h"
 #include "home_page.h"
 #include "hourly_page.h"
 #include "pages.h"
@@ -57,7 +61,16 @@ HourlyPage hourlyPage(settings);
 BadgePage badgePage(settings);
 WiglePage wiglePage(settings);
 WardriftPage wardriftPage(settings);
+GithubPage githubPage(settings);
+GithubListPage githubListPage(settings);
 StatusPage statusPage(settings, weather::lastError());
+
+void applyScreens() {
+  for (uint8_t i = 0; i < ScreenCount && i < pages.count(); i++) {
+    pages.setEnabled(i, settings.screenOn(i));
+  }
+  pages.settle();
+}
 
 void ledsOff() {
   for (int pin : {PIN_LED_R, PIN_LED_G, PIN_LED_B}) {
@@ -102,6 +115,8 @@ void serviceSettingsPage() {
     wdg::prepare(settings);   // drop the previous account before the redraw if the key changed
     wigle::prepare(settings);
     wardrift::prepare(settings);
+    github::prepare(settings);
+    applyScreens();
     pages.redraw();
   }
   if (settings_web::takeIconTestRequest()) {
@@ -151,9 +166,12 @@ void setup() {
   pages.add(&badgePage);
   pages.add(&wiglePage);
   pages.add(&wardriftPage);
+  pages.add(&githubPage);
+  pages.add(&githubListPage);
   pages.add(&statusPage);
 
   settings.load();
+  applyScreens();
   prepareWifi();
 
   if (!hasSavedWifi()) {
@@ -190,12 +208,18 @@ void loop() {
   }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
-  // One HTTPS download at a time. Weather, then WDGWars, then WiGLE, then Wardrift.
-  if (networkReady) weather::update(settings);
+  // One HTTPS download at a time. Weather, then WDGWars, then WiGLE, then Wardrift,
+  // then one GitHub repo.
+  const bool wantWeather = settings.screenOn(ScreenHome) || settings.screenOn(ScreenHourly) ||
+                           settings.screenOn(ScreenStatus);
+  if (networkReady && wantWeather) weather::update(settings);
   if (weather::takeChanged()) pages.dataChanged();
-  if (networkReady) wdg::update(settings);
-  if (networkReady) wigle::update(settings);
-  if (networkReady) wardrift::update(settings);
+  if (networkReady && settings.screenOn(ScreenBadge)) wdg::update(settings);
+  if (networkReady && settings.screenOn(ScreenWigle)) wigle::update(settings);
+  if (networkReady && settings.screenOn(ScreenWardrift)) wardrift::update(settings);
+  if (networkReady && (settings.screenOn(ScreenStars) || settings.screenOn(ScreenRepos))) {
+    github::update(settings);
+  }
   updateHoldBar();
   pages.update();
 }

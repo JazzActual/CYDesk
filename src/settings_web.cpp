@@ -5,6 +5,7 @@
 #include <WebServer.h>
 #include <WiFi.h>
 
+#include "github_service.h"
 #include "theme.h"
 
 namespace settings_web {
@@ -105,12 +106,14 @@ const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
  h1{color:var(--accent,#00e5ff);font-size:22px;margin:0 0 4px}
  .sub{color:#5d7b8c;font-size:13px;margin-bottom:18px}
  label{display:block;color:#5d7b8c;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px}
- input[type=text],input[type=password]{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
+ input[type=text],input[type=password],textarea{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
    border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px}
- input[type=text]:focus,input[type=password]:focus,input[type=time]:focus{border-color:var(--accent,#00e5ff);outline:none}
+ input[type=text]:focus,input[type=password]:focus,input[type=time]:focus,textarea:focus{border-color:var(--accent,#00e5ff);outline:none}
+ textarea{min-height:88px;resize:vertical}
  input[type=time]{width:160px;box-sizing:border-box;background:#0f2531;color:#e6edf3;
    border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px;color-scheme:dark}
  .units label{display:inline;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin-right:18px}
+ .screens label{display:block;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin:8px 0}
  .hint{color:#5d7b8c;font-size:12px;margin-top:4px}
  .color-row{display:flex;align-items:center;gap:12px}
  input[type=color]{width:72px;height:42px;padding:3px;background:#0f2531;border:1px solid #1d3a4a;border-radius:8px}
@@ -189,6 +192,16 @@ void handleRoot() {
           "<div class='hint'>Colors the heading, links, choices, and Save button on this page, "
           "and the highlights on the desk buddy. Pink stays for errors, the umbrella, and sunset.</div>";
 
+  html += "<label>Screens</label><div class='screens'>";
+  const char* screenNames[] = {"Home", "Hourly", "Badge", "WiGLE", "Wardrift", "Stars", "Repos"};
+  for (uint8_t i = 0; i < ScreenStatus; i++) {
+    html += "<label><input type='checkbox' name='screen" + String(i) + "' value='1'";
+    if (s.screenOn(i)) html += " checked";
+    html += "> " + String(screenNames[i]) + "</label>";
+  }
+  html += "</div><div class='hint'>A tap skips any screen that is off. "
+          "Status always stays on. Home stays on if every other box is cleared.</div>";
+
   html += "<label for='name'>Your name (for the greeting)</label>"
           "<input type='text' id='name' name='name' maxlength='20' value='" +
           escapeHtml(s.name) + "'>";
@@ -251,6 +264,12 @@ void handleRoot() {
     html += "<div class='hint'><input type='checkbox' name='wardclear' value='1'> "
             "Remove the saved Wardrift login</div>";
   }
+
+  html += "<label for='ghrepos'>GitHub repos</label>"
+          "<textarea id='ghrepos' name='ghrepos' maxlength='200'>" +
+          escapeHtml(s.githubRepos) + "</textarea>"
+          "<div class='hint'>Up to four public repos, one per line, as owner/repo. "
+          "The desk reads the star count every 15 minutes. No token needed.</div>";
 
   html += "<label>Temperature units</label><div class='units'>";
   html += String("<label><input type='radio' name='units' value='F'") +
@@ -338,6 +357,7 @@ void handleSave() {
   } else if (wardriftPass.length()) {
     s.wardriftPass = wardriftPass;
   }
+  s.githubRepos = github::normalizeRepos(server.arg("ghrepos"));
   s.fahrenheit = server.arg("units") != "C";
   s.clock24h = server.arg("clock") == "24";
   const String mode = server.arg("petmode");
@@ -352,6 +372,12 @@ void handleSave() {
                                  : static_cast<uint8_t>(PetAnimal::Fox);
   uint32_t accent = s.accent;
   if (parseHexColor(server.arg("accent"), accent)) s.accent = accent;
+  uint8_t screens = 1u << ScreenStatus;
+  for (uint8_t i = 0; i < ScreenStatus; i++) {
+    if (server.hasArg("screen" + String(i))) screens |= 1u << i;
+  }
+  if ((screens & ~(1u << ScreenStatus)) == 0) screens |= 1u << ScreenHome;
+  s.screens = screens;
   theme::setAccent(s.accent);
   s.save();
   changed = true;
@@ -365,6 +391,7 @@ void handleSave() {
                 clockTime(s.wigleMinute).c_str(),
                 (s.wardriftUser.length() && s.wardriftPass.length()) ? "set" : "none",
                 s.petAnimal, s.petMode, hexColor(s.accent).c_str());
+  Serial.printf("[web] screens: %02x\n", s.screens);
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

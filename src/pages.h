@@ -30,7 +30,10 @@ class PageManager {
   explicit PageManager(TFT_eSPI& tft) : tft_(tft) {}
 
   void add(Page* page);
-  void next();     // go to the following page (wraps around)
+  void setEnabled(size_t index, bool on);
+  // If the visible page was just switched off, move to the next one that is on.
+  void settle();
+  void next();     // go to the following page that is switched on (wraps around)
   void show(size_t index);  // jump straight to a page
   void redraw();   // redraw the current page from scratch
   void update();   // pass loop() on to the current page
@@ -42,6 +45,7 @@ class PageManager {
  private:
   TFT_eSPI& tft_;
   Page* pages_[MAX_PAGES] = {};
+  bool enabled_[MAX_PAGES] = {};
   size_t count_ = 0;
   size_t current_ = 0;
 };

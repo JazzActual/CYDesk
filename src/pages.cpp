@@ -11,14 +11,32 @@
 // ---- PageManager -----------------------------------------------------------
 
 void PageManager::add(Page* page) {
-  if (count_ < MAX_PAGES) pages_[count_++] = page;
+  if (count_ < MAX_PAGES) {
+    enabled_[count_] = true;
+    pages_[count_++] = page;
+  }
+}
+
+void PageManager::setEnabled(size_t index, bool on) {
+  if (index < count_) enabled_[index] = on;
+}
+
+void PageManager::settle() {
+  if (count_ == 0 || enabled_[current_]) return;
+  next();
 }
 
 void PageManager::next() {
   if (count_ == 0) return;
-  current_ = (current_ + 1) % count_;
-  Serial.printf("[pages] -> %s\n", pages_[current_]->name());
-  redraw();
+  for (size_t step = 1; step <= count_; step++) {
+    const size_t index = (current_ + step) % count_;
+    if (!enabled_[index]) continue;
+    if (index == current_) return;
+    current_ = index;
+    Serial.printf("[pages] -> %s\n", pages_[current_]->name());
+    redraw();
+    return;
+  }
 }
 
 void PageManager::show(size_t index) {
@@ -134,6 +152,8 @@ void StatusPage::draw(TFT_eSPI& tft) {
   row("WiGLE", wigleSaved ? "stats" : "", wigleSaved ? theme::accent() : theme::TEXT);
   const bool wardriftSaved = settings_.wardriftUser.length() && settings_.wardriftPass.length();
   row("Wardrift", wardriftSaved ? "stats" : "", wardriftSaved ? theme::accent() : theme::TEXT);
+  row("GitHub", settings_.githubRepos.length() ? "stars" : "",
+      settings_.githubRepos.length() ? theme::accent() : theme::TEXT);
   const char* animal = "None";
   if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Fox)) animal = "Fox";
   else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon)) animal = "Raccoon";

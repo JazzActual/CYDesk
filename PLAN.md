@@ -52,7 +52,14 @@ A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S0
    sends the session token. Neither secret is printed. The board does not upload anything.
    Refreshes every 15 minutes. A failed refresh keeps the last result and marks it stale.
    Nothing saved: "No Wardrift login yet".
-6. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
+6. **Stars** (`github_page.cpp`): the first public `owner/repo` as a big count, from a
+   read-only `GET https://api.github.com/repos/<owner>/<repo>`. No token. The address sits
+   along the bottom. One star count per local day (up to 21 days) is drawn as a thin line
+   once two days are saved. Nothing saved: "No repos yet".
+7. **Repos** (`github_page.cpp`): the list of saved repos, name and star count. It asks for
+   a second repo until two are saved. Same fetch as Stars: every 15 minutes, one request
+   at a time, up to four repos. A failed check keeps the last count.
+8. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
 
 ## Desk pet
 
@@ -115,6 +122,9 @@ browser or printed to the serial log. Nothing private is kept in the repo.
   `Authorization: Bearer`. The password and token are never printed. The fields drawn
   are the first character's `name`, `level`, `class_name`, `faction_id`, `currency`, and
   `wardrive.lifetime` routes, access points, and threats, plus `streak_days`.
+- **GitHub**: one read-only `GET https://api.github.com/repos/<owner>/<repo>` at a time, after
+  Wardrift, for up to four public repos. No token. The field drawn is `stargazers_count`.
+  Each repo refreshes every 15 minutes. A failed check keeps the last count.
 
 ## Build steps (each one ends with something visible on the screen, then a commit)
 
@@ -136,8 +146,8 @@ Do the screen toggles first, so each new page can be switched off as it lands. B
 
 11. [x] **WiGLE stats page.** Rank, month rank, and discovery counts (Wi-Fi, cell, Bluetooth, this month) from a read-only `GET /api/v2/stats/user`. API name and token are HTTP Basic auth, stored in flash, never printed. One successful check per day, at a time chosen on the settings page. Counts on this page and the WDGWars badge are shortened (1.2k, 12.5k, 1.25M). Empty state when no login is saved.
 12. [x] **Bear** on the desk pet list, same 20×20 mirrored left-half style as the fox, raccoon, and owl (tail overlay, shared accessories). Chosen next to the other animals on the settings page.
-13. [ ] **Toggle extra screens.** Home and Hourly always stay in the tap cycle. Each add-on page (WDGWars, WiGLE, GitHub stars, and any added later) gets a checkbox on the settings page and is skipped when it is off. A page that is on but has no key still shows its empty state. Status stays in the cycle as the diagnostics page.
-14. [ ] **GitHub star tracker page.** Settings hold one or more `owner/repo` pairs. For a public repo, `GET https://api.github.com/repos/<owner>/<repo>` returns `stargazers_count` with no key (60 requests an hour; one repo every 15 minutes fits). The page shows the repo name and the star count. A token is only needed for a private repo or a higher limit — decide that when building it. Same fetch rules: one HTTPS call at a time, keep the last count if a fetch fails.
+13. [x] **Toggle screens.** Home, Hourly, Badge, WiGLE, Wardrift, Stars, and Repos each have a checkbox on the settings page and are skipped when off, including their fetch. Status always stays in the cycle. A page that is on but has no key still shows its empty state. If every box is cleared, Home stays on so the desk always has a page.
+14. [x] **GitHub star tracker.** Up to four public `owner/repo` names. `GET /repos/<owner>/<repo>` returns `stargazers_count` with no token (60 requests an hour; a few repos every 15 minutes fits). Stars is the first repo as a big count, with the address and a daily line. Repos is the list, shown once a second repo is saved. One request at a time. A failed check keeps the last count. A token for private repos was left out.
 15. [ ] **BLE alerts.** The settings page holds a list of device names or prefixes the user cares about (Axon cameras are the example). The board passive-scans advertisements and shows an alert when one of those names is heard, then clears it after the device goes quiet. Only those matches are kept; the scan does not store or print every device nearby. Wi-Fi and BLE share one radio, so the scan pauses around the HTTPS fetches and must not stall touch. Draw the alert layout as a preview before putting it on the board.
 16. [x] **Accent color.** A color picker on the settings page, saved in flash, default cyan (`#00e5ff`). It replaces the cyan accent on every page, including the settings page itself (the page updates as the picker moves). Pink (`#ff2d95`) stays the second accent.
 

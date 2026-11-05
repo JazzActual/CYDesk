@@ -9,6 +9,19 @@
 enum class PetAnimal : uint8_t { None = 0, Fox = 1, Raccoon = 2, Owl = 3, Bear = 4 };
 enum class PetMode : uint8_t { Off = 0, Idle = 1, Reacts = 2 };
 
+// Tap order. The bit in Settings::screens matches this index.
+enum Screen : uint8_t {
+  ScreenHome = 0,
+  ScreenHourly,
+  ScreenBadge,
+  ScreenWigle,
+  ScreenWardrift,
+  ScreenStars,
+  ScreenRepos,
+  ScreenStatus,
+  ScreenCount
+};
+
 struct Settings {
   String name;             // used in the greeting: "Morning, <name>!"
   String zip;              // weather location (US ZIP / postcode), e.g. "60601"
@@ -18,6 +31,7 @@ struct Settings {
   String wigleToken;       // WiGLE API token; never printed
   String wardriftUser;     // Wardrift username
   String wardriftPass;     // Wardrift password; never printed
+  String githubRepos;      // up to four "owner/repo" lines, public repos
   // When to ask WiGLE, as minutes after local midnight. Default 4:00 AM.
   // One successful check per day; the last numbers stay up until the next one.
   uint16_t wigleMinute = 4 * 60;
@@ -30,6 +44,14 @@ struct Settings {
   // before the settings page is opened.
   uint8_t petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
   uint8_t petMode = static_cast<uint8_t>(PetMode::Reacts);
+
+  // Which screens a tap visits. Every bit starts on. Status is always on.
+  // Home is forced on if every other screen is off.
+  static constexpr uint8_t SCREENS_ALL = (1u << ScreenCount) - 1;
+  uint8_t screens = SCREENS_ALL;
+  bool screenOn(uint8_t index) const {
+    return index < ScreenCount && (screens & (1u << index)) != 0;
+  }
 
   // Filled in once WeatherAPI confirms the ZIP, e.g. "Chicago, Illinois".
   // Empty = not checked yet (or ZIP/key changed since).
