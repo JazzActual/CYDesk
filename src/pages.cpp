@@ -134,6 +134,7 @@ void StatusPage::draw(TFT_eSPI& tft) {
   if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Fox)) animal = "Fox";
   else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon)) animal = "Raccoon";
   else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Owl)) animal = "Owl";
+  else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Bear)) animal = "Bear";
   const char* mode = "Off";
   if (settings_.petMode == static_cast<uint8_t>(PetMode::Idle)) mode = "Idle";
   else if (settings_.petMode == static_cast<uint8_t>(PetMode::Reacts)) mode = "Reacts";

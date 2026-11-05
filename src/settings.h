@@ -6,7 +6,7 @@
 #pragma once
 #include <Arduino.h>
 
-enum class PetAnimal : uint8_t { None = 0, Fox = 1, Raccoon = 2, Owl = 3 };
+enum class PetAnimal : uint8_t { None = 0, Fox = 1, Raccoon = 2, Owl = 3, Bear = 4 };
 enum class PetMode : uint8_t { Off = 0, Idle = 1, Reacts = 2 };
 
 struct Settings {

@@ -227,7 +227,10 @@ void handleRoot() {
   html += String("<label><input type='radio' name='pet' value='raccoon'") +
           (s.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon) ? " checked" : "") + "> Raccoon</label>";
   html += String("<label><input type='radio' name='pet' value='owl'") +
-          (s.petAnimal == static_cast<uint8_t>(PetAnimal::Owl) ? " checked" : "") + "> Owl</label></div>";
+          (s.petAnimal == static_cast<uint8_t>(PetAnimal::Owl) ? " checked" : "") + "> Owl</label>";
+  html += String("<label><input type='radio' name='pet' value='bear'") +
+          (s.petAnimal == static_cast<uint8_t>(PetAnimal::Bear) ? " checked" : "") +
+          "> Bear</label></div>";
 
   html += "<button type='submit'>Save to desk buddy</button></form>";
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
@@ -267,7 +270,8 @@ void handleSave() {
   s.petAnimal = animal == "none" ? static_cast<uint8_t>(PetAnimal::None)
               : animal == "raccoon" ? static_cast<uint8_t>(PetAnimal::Raccoon)
               : animal == "owl" ? static_cast<uint8_t>(PetAnimal::Owl)
-                                : static_cast<uint8_t>(PetAnimal::Fox);
+              : animal == "bear" ? static_cast<uint8_t>(PetAnimal::Bear)
+                                 : static_cast<uint8_t>(PetAnimal::Fox);
   uint32_t accent = s.accent;
   if (parseHexColor(server.arg("accent"), accent)) s.accent = accent;
   theme::setAccent(s.accent);

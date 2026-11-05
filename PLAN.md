@@ -43,13 +43,13 @@ A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S0
 ## Desk pet
 
 - Pixel art: a 20×20 animal on a 26×26 canvas (room for an umbrella and "z z"), drawn at 3×
-  (78 px) in the bottom-left corner. Animals: **fox, raccoon, owl**, chosen on the settings page.
+  (78 px) in the bottom-left corner. Animals: **fox, raccoon, owl, bear**, chosen on the settings page.
 - Accessories are overlays shared by all animals.
 - **Reactions** (priority order): asleep at night (eyes closed, "z z") > umbrella when this hour's
   rain/snow chance is over 50% > sunglasses when it's sunny (clear by day) > idle.
   The idle animation is a blink or small wiggle, swapping frames every ~0.5 s and redrawing only
   the pet's corner from an off-screen sprite.
-- Setting: **Desk pet: Off / Idle / Reacts to weather**, plus the animal (None / Fox / Raccoon / Owl).
+- Setting: **Desk pet: Off / Idle / Reacts to weather**, plus the animal (None / Fox / Raccoon / Owl / Bear).
   Default is a fox that reacts, so the corner isn't empty before setup.
 - More reactions can come later (e.g. a scarf below freezing).
 - The approved pixel designs live in the local preview script (see `CLAUDE.local.md`). Port them
@@ -108,10 +108,10 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 
 ## Next batch (added 2026-11-04, not started)
 
-Do the screen toggles first, so each new page can be switched off as it lands. The bear is a preview on the Mac before any firmware. BLE is last: it shares the radio with Wi-Fi.
+Do the screen toggles first, so each new page can be switched off as it lands. BLE is last: it shares the radio with Wi-Fi.
 
 11. [ ] **WiGLE stats page**, same idea as the WDGWars badge. Read-only `GET https://api.wigle.net/api/v2/stats/user` with HTTP Basic auth (the API name and token from the WiGLE account). Draw rank and the discovery counts (Wi-Fi, cell, Bluetooth — confirm the exact JSON fields before laying the page out). The token is stored in flash like the other keys and is never printed. One HTTPS download at a time, refresh every 15 minutes, keep the last result and mark it stale if a fetch fails. Empty state when no token is saved.
-12. [ ] **Bear** on the desk pet list, same 20×20 mirrored left-half style as the fox, raccoon, and owl (tail overlay, shared accessories). Render a preview on the Mac first (true size, enlarged 2×, hard pixels) and port the art only after it is approved. Then add Bear next to the other animals on the settings page.
+12. [x] **Bear** on the desk pet list, same 20×20 mirrored left-half style as the fox, raccoon, and owl (tail overlay, shared accessories). Chosen next to the other animals on the settings page.
 13. [ ] **Toggle extra screens.** Home and Hourly always stay in the tap cycle. Each add-on page (WDGWars, WiGLE, GitHub stars, and any added later) gets a checkbox on the settings page and is skipped when it is off. A page that is on but has no key still shows its empty state. Status stays in the cycle as the diagnostics page.
 14. [ ] **GitHub star tracker page.** Settings hold one or more `owner/repo` pairs. For a public repo, `GET https://api.github.com/repos/<owner>/<repo>` returns `stargazers_count` with no key (60 requests an hour; one repo every 15 minutes fits). The page shows the repo name and the star count. A token is only needed for a private repo or a higher limit — decide that when building it. Same fetch rules: one HTTPS call at a time, keep the last count if a fetch fails.
 15. [ ] **BLE alerts.** The settings page holds a list of device names or prefixes the user cares about (Axon cameras are the example). The board passive-scans advertisements and shows an alert when one of those names is heard, then clears it after the device goes quiet. Only those matches are kept; the scan does not store or print every device nearby. Wi-Fi and BLE share one radio, so the scan pauses around the HTTPS fetches and must not stall touch. Draw the alert layout as a preview before putting it on the board.

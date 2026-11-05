@@ -25,7 +25,7 @@ void Settings::load() {
   accent     = prefs.isKey("accent") ? prefs.getUInt("accent", theme::DEFAULT_ACCENT)
                                      : theme::DEFAULT_ACCENT;
   accent &= 0xFFFFFFu;
-  if (petAnimal > static_cast<uint8_t>(PetAnimal::Owl)) petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
+  if (petAnimal > static_cast<uint8_t>(PetAnimal::Bear)) petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
   if (petMode > static_cast<uint8_t>(PetMode::Reacts)) petMode = static_cast<uint8_t>(PetMode::Reacts);
   theme::setAccent(accent);
   placeLabel = prefs.getString("place", "");

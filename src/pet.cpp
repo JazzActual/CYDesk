@@ -87,17 +87,35 @@ constexpr const char* OWL_ROWS[] = {
     "..kkakkakkkkakkakk..", "....................",
 };
 
+constexpr char BEAR_LETTERS[] = "kbdcten";
+constexpr uint16_t BEAR_COLOURS[] = {
+    theme::rgb(62, 36, 18), theme::rgb(176, 112, 58), theme::rgb(110, 68, 34),
+    theme::rgb(240, 216, 178), theme::rgb(206, 150, 86), theme::rgb(24, 16, 12),
+    theme::rgb(40, 24, 16),
+};
+constexpr const char* BEAR_ROWS[] = {
+    "....................", "..kkk..........kkk..", ".kbbbk........kbbbk.",
+    ".kbcck........kccbk.", ".kbbbbbbbbbbbbbbbbk.", "kbbbbbbbbbbbbbbbbbbk",
+    "kbbbbbbbbbbbbbbbbbbk", "kbbbbbbbbbbbbbbbbbbk", "kbbbbbbbbbbbbbbbbbbk",
+    "kbbeebbbbbbbbbbeebbk", "kbbeebbbbbbbbbbeebbk", "kbbccccccccccccccbbk",
+    ".kbccccccccccccccbk.", "..kccccccnncccccck..", "...kccccccccccckk...",
+    "...kbbbbbbbbbbkbbk..", "..kbbtttttttttkbbbk.", "..kbbttttttttttkbbk.",
+    "..kdddkbbbbbbkddkk..", "...kkk.kkkkkk.kkk...",
+};
+
 const Animal ANIMALS[] = {
     {FOX_ROWS, FOX_LETTERS, FOX_COLOURS, 7, {3, 9, 4, 9, 3, 10, 4, 10, 15, 9, 16, 9, 15, 10, 16, 10}, 'o'},
     {RACCOON_ROWS, RACCOON_LETTERS, RACCOON_COLOURS, 9,
      {3, 9, 4, 9, 3, 10, 4, 10, 15, 9, 16, 9, 15, 10, 16, 10}, 'm'},
     {OWL_ROWS, OWL_LETTERS, OWL_COLOURS, 9, {4, 9, 5, 9, 4, 10, 5, 10, 14, 9, 15, 9, 14, 10, 15, 10}, 'y'},
+    {BEAR_ROWS, BEAR_LETTERS, BEAR_COLOURS, 7,
+     {3, 9, 4, 9, 3, 10, 4, 10, 15, 9, 16, 9, 15, 10, 16, 10}, 'b'},
 };
 
 bool visible(const Settings& s) {
   return s.petMode != static_cast<uint8_t>(PetMode::Off) &&
          s.petAnimal != static_cast<uint8_t>(PetAnimal::None) &&
-         s.petAnimal <= static_cast<uint8_t>(PetAnimal::Owl);
+         s.petAnimal <= static_cast<uint8_t>(PetAnimal::Bear);
 }
 
 const Animal& animalFor(const Settings& s) {
