@@ -16,6 +16,11 @@ struct Settings {
   String wdgKey;           // WDGWars API key; the badge page shows that account's stats
   String wigleName;        // WiGLE API name; never printed
   String wigleToken;       // WiGLE API token; never printed
+  String wardriftUser;     // Wardrift username
+  String wardriftPass;     // Wardrift password; never printed
+  // When to ask WiGLE, as minutes after local midnight. Default 4:00 AM.
+  // One successful check per day; the last numbers stay up until the next one.
+  uint16_t wigleMinute = 4 * 60;
   bool fahrenheit = true;  // false = Celsius
   bool clock24h = false;   // true = "13:07", false = "1:07 PM"
   // Highlight color, #RRGGBB. Default cyan. Pink is not part of this.

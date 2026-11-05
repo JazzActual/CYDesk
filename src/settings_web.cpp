@@ -69,6 +69,22 @@ const char* onAccent(uint32_t rgb24) {
 }
 
 // Accepts the value an <input type="color"> submits: "#rrggbb".
+// "04:00" or "4:00" -> minutes after midnight.
+bool parseClockTime(const String& in, uint16_t& out) {
+  int hour = -1;
+  int minute = -1;
+  if (sscanf(in.c_str(), "%d:%d", &hour, &minute) != 2) return false;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return false;
+  out = static_cast<uint16_t>(hour * 60 + minute);
+  return true;
+}
+
+String clockTime(uint16_t minuteOfDay) {
+  char buf[6];
+  snprintf(buf, sizeof(buf), "%02u:%02u", minuteOfDay / 60, minuteOfDay % 60);
+  return String(buf);
+}
+
 bool parseHexColor(const String& in, uint32_t& out) {
   if (in.length() != 7 || in.charAt(0) != '#') return false;
   for (int i = 1; i < 7; i++) {
@@ -91,7 +107,9 @@ const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
  label{display:block;color:#5d7b8c;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px}
  input[type=text],input[type=password]{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
    border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px}
- input[type=text]:focus,input[type=password]:focus{border-color:var(--accent,#00e5ff);outline:none}
+ input[type=text]:focus,input[type=password]:focus,input[type=time]:focus{border-color:var(--accent,#00e5ff);outline:none}
+ input[type=time]{width:160px;box-sizing:border-box;background:#0f2531;color:#e6edf3;
+   border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px;color-scheme:dark}
  .units label{display:inline;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin-right:18px}
  .hint{color:#5d7b8c;font-size:12px;margin-top:4px}
  .color-row{display:flex;align-items:center;gap:12px}
@@ -208,9 +226,30 @@ void handleRoot() {
   html += s.wigleToken.length() ? "saved &mdash; leave blank to keep it" : "paste the API token";
   html += "'><div class='hint'>From your WiGLE account page. Shows rank and discoveries. "
           "Leave a box blank to keep what's saved.</div>";
+  html += "<label for='wiglat'>Check WiGLE at</label>"
+          "<input type='time' id='wiglat' name='wiglat' value='" +
+          clockTime(s.wigleMinute) + "'>"
+          "<div class='hint'>Once a day, at this time. If the desk is off then, it checks once "
+          "the next time it is on. A failed check tries again every 15 minutes until one works. "
+          "The last numbers stay on screen until the next check.</div>";
   if (wigleSaved) {
     html += "<div class='hint'><input type='checkbox' name='wigleclear' value='1'> "
             "Remove the saved WiGLE login</div>";
+  }
+
+  const bool wardriftSaved = s.wardriftUser.length() && s.wardriftPass.length();
+  html += "<label for='warduser'>Wardrift username</label>"
+          "<input type='text' id='warduser' name='warduser' maxlength='30' autocomplete='off' value='" +
+          escapeHtml(s.wardriftUser) + "'>";
+  html += "<label for='wardpass'>Wardrift password</label>"
+          "<input type='password' id='wardpass' name='wardpass' maxlength='80' autocomplete='off' placeholder='";
+  html += s.wardriftPass.length() ? "saved &mdash; leave blank to keep it" : "password for wardrift.net";
+  html += "'><div class='hint'>The API key is only for uploads, so it cannot load this page. "
+          "The desk signs in with this username and password instead. "
+          "Leave the password blank to keep the saved one.</div>";
+  if (wardriftSaved) {
+    html += "<div class='hint'><input type='checkbox' name='wardclear' value='1'> "
+            "Remove the saved Wardrift login</div>";
   }
 
   html += "<label>Temperature units</label><div class='units'>";
@@ -287,6 +326,18 @@ void handleSave() {
     if (wigleName.length()) s.wigleName = wigleName;
     if (wigleToken.length()) s.wigleToken = wigleToken;
   }
+  uint16_t wigleMinute = s.wigleMinute;
+  if (parseClockTime(server.arg("wiglat"), wigleMinute)) s.wigleMinute = wigleMinute;
+  s.wardriftUser = server.arg("warduser");
+  s.wardriftUser.trim();
+  String wardriftPass = server.arg("wardpass");
+  wardriftPass.trim();
+  if (server.hasArg("wardclear")) {
+    s.wardriftUser = "";
+    s.wardriftPass = "";
+  } else if (wardriftPass.length()) {
+    s.wardriftPass = wardriftPass;
+  }
   s.fahrenheit = server.arg("units") != "C";
   s.clock24h = server.arg("clock") == "24";
   const String mode = server.arg("petmode");
@@ -306,11 +357,13 @@ void handleSave() {
   changed = true;
 
   // Never print either key, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s wigle=%s pet=%u mode=%u accent=%s\n",
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s wigle=%s at %s ward=%s pet=%u mode=%u accent=%s\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
                 s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
                 s.wdgKey.length() ? "set" : "none",
                 (s.wigleName.length() && s.wigleToken.length()) ? "set" : "none",
+                clockTime(s.wigleMinute).c_str(),
+                (s.wardriftUser.length() && s.wardriftPass.length()) ? "set" : "none",
                 s.petAnimal, s.petMode, hexColor(s.accent).c_str());
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh

@@ -5,14 +5,15 @@
 //   2. Hourly    next 12 hours: hour, icon, temperature, rain chance
 //   3. Badge     WDGWars stats
 //   4. WiGLE     rank and discovery counts
-//   5. Status    settings / Wi-Fi / weather diagnostics
+//   5. Wardrift  character level and wardrive counts
+//   6. Status    settings / Wi-Fi / weather diagnostics
 //
 // Setup happens in two parts:
 //   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (DeskBuddy-Setup).
 //      Holding a finger on the screen for 5 seconds reopens it.
 //   2. On the home Wi-Fi, the board serves a settings page at
 //      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key,
-//      WiGLE login, and units.
+//      WiGLE login, Wardrift username and password, and units.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -31,6 +32,8 @@
 #include "timekeeping.h"
 #include "touch.h"
 #include "weather_service.h"
+#include "wardrift_page.h"
+#include "wardrift_service.h"
 #include "wdgwars_service.h"
 #include "wigle_page.h"
 #include "wigle_service.h"
@@ -53,6 +56,7 @@ HomePage homePage(settings);
 HourlyPage hourlyPage(settings);
 BadgePage badgePage(settings);
 WiglePage wiglePage(settings);
+WardriftPage wardriftPage(settings);
 StatusPage statusPage(settings, weather::lastError());
 
 void ledsOff() {
@@ -97,6 +101,7 @@ void serviceSettingsPage() {
     weather::refreshSoon();  // ZIP/key/units may have changed
     wdg::prepare(settings);   // drop the previous account before the redraw if the key changed
     wigle::prepare(settings);
+    wardrift::prepare(settings);
     pages.redraw();
   }
   if (settings_web::takeIconTestRequest()) {
@@ -145,6 +150,7 @@ void setup() {
   pages.add(&hourlyPage);
   pages.add(&badgePage);
   pages.add(&wiglePage);
+  pages.add(&wardriftPage);
   pages.add(&statusPage);
 
   settings.load();
@@ -184,11 +190,12 @@ void loop() {
   }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
-  // One HTTPS download at a time. Weather, then WDGWars, then WiGLE.
+  // One HTTPS download at a time. Weather, then WDGWars, then WiGLE, then Wardrift.
   if (networkReady) weather::update(settings);
   if (weather::takeChanged()) pages.dataChanged();
   if (networkReady) wdg::update(settings);
   if (networkReady) wigle::update(settings);
+  if (networkReady) wardrift::update(settings);
   updateHoldBar();
   pages.update();
 }

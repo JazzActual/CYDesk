@@ -100,7 +100,7 @@ void StatusPage::draw(TFT_eSPI& tft) {
   tft.setTextColor(theme::accent(), theme::BG);
   tft.drawString("Settings check", 12, 12, 4);
 
-  const int labelX = 12, valueX = 92, valueWidth = tft.width() - valueX - 8;
+  const int labelX = 12, valueX = 104, valueWidth = tft.width() - valueX - 8;
   int y = 44;
   auto row = [&](const char* label, const String& value, uint16_t colour) {
     tft.setTextColor(theme::MUTED, theme::BG);
@@ -132,6 +132,8 @@ void StatusPage::draw(TFT_eSPI& tft) {
       settings_.wdgKey.length() ? theme::accent() : theme::TEXT);
   const bool wigleSaved = settings_.wigleName.length() && settings_.wigleToken.length();
   row("WiGLE", wigleSaved ? "stats" : "", wigleSaved ? theme::accent() : theme::TEXT);
+  const bool wardriftSaved = settings_.wardriftUser.length() && settings_.wardriftPass.length();
+  row("Wardrift", wardriftSaved ? "stats" : "", wardriftSaved ? theme::accent() : theme::TEXT);
   const char* animal = "None";
   if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Fox)) animal = "Fox";
   else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon)) animal = "Raccoon";

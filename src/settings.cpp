@@ -19,6 +19,10 @@ void Settings::load() {
   wdgKey     = prefs.isKey("wdgkey") ? prefs.getString("wdgkey", "") : "";
   wigleName  = prefs.isKey("wiglname") ? prefs.getString("wiglname", "") : "";
   wigleToken = prefs.isKey("wigltoken") ? prefs.getString("wigltoken", "") : "";
+  wardriftUser = prefs.isKey("warduser") ? prefs.getString("warduser", "") : "";
+  wardriftPass = prefs.isKey("wardpass") ? prefs.getString("wardpass", "") : "";
+  wigleMinute = prefs.isKey("wiglmin") ? prefs.getUShort("wiglmin", 4 * 60) : 4 * 60;
+  if (wigleMinute > 23 * 60 + 59) wigleMinute = 4 * 60;
   fahrenheit = prefs.getBool("fahrenheit", true);
   clock24h   = prefs.getBool("clock24h", false);
   petAnimal  = prefs.getUChar("pet", static_cast<uint8_t>(PetAnimal::Fox));
@@ -52,6 +56,10 @@ void Settings::save() const {
   prefs.putString("wdgkey", wdgKey);
   prefs.putString("wiglname", wigleName);
   prefs.putString("wigltoken", wigleToken);
+  prefs.putString("warduser", wardriftUser);
+  prefs.putString("wardpass", wardriftPass);
+  prefs.remove("wardkey");  // an upload key cannot read the dashboard
+  prefs.putUShort("wiglmin", wigleMinute);
   prefs.putBool("fahrenheit", fahrenheit);
   prefs.putBool("clock24h", clock24h);
   prefs.putUChar("pet", petAnimal);

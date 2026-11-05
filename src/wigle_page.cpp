@@ -38,6 +38,17 @@ bool loginSaved(const Settings& s) {
   return s.wigleName.length() > 0 && s.wigleToken.length() > 0;
 }
 
+void formatWhen(uint16_t minuteOfDay, bool use24h, char* buf, size_t n) {
+  const int hour = minuteOfDay / 60;
+  const int minute = minuteOfDay % 60;
+  if (use24h) {
+    snprintf(buf, n, "%02d:%02d", hour, minute);
+    return;
+  }
+  const int hour12 = hour % 12 == 0 ? 12 : hour % 12;
+  snprintf(buf, n, "%d:%02d %s", hour12, minute, hour < 12 ? "AM" : "PM");
+}
+
 // Same positions as local/previews/wigle_preview.py.
 void drawStats(TFT_eSPI& tft) {
   const int dy = tft.height() <= 240 ? 0 : (tft.height() - 240) / 2;
@@ -108,7 +119,11 @@ void drawStats(TFT_eSPI& tft) {
 
 uint32_t WiglePage::signature() const {
   if (!loginSaved(settings_)) return 0;
-  return 0x80000000u | wigle::generation();
+  uint32_t sig = 0x80000000u | (wigle::generation() & 0xFFFFu);
+  if (wigle::waitsUntilSetTime(settings_)) {
+    sig |= 0x40000000u | (static_cast<uint32_t>(settings_.wigleMinute) << 16);
+  }
+  return sig;
 }
 
 void WiglePage::draw(TFT_eSPI& tft) {
@@ -116,6 +131,13 @@ void WiglePage::draw(TFT_eSPI& tft) {
   tft.fillScreen(theme::BG);
   if (!loginSaved(settings_)) {
     centerMessage(tft, "No WiGLE login yet", "Add it on the settings page", theme::TEXT);
+    return;
+  }
+  if (!wigle::current().ok && wigle::lastError().isEmpty() && WiFi.status() == WL_CONNECTED &&
+      wigle::waitsUntilSetTime(settings_)) {
+    char when[16];
+    formatWhen(settings_.wigleMinute, settings_.clock24h, when, sizeof(when));
+    centerMessage(tft, "Next check", when, theme::MUTED);
     return;
   }
   drawStats(tft);
