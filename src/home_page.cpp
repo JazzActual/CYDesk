@@ -4,6 +4,7 @@
 #include <WiFi.h>
 
 #include "fonts.h"
+#include "layout.h"
 #include "pet.h"
 #include "theme.h"
 #include "timekeeping.h"
@@ -19,10 +20,10 @@ constexpr int GREETING_Y = 12;      // top of the greeting (24 px font)
 constexpr int DATE_Y = 44;          // top of the date (14 px font), under the greeting
 constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
 constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
-constexpr int ICON = 72;
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
 
 struct Place {
+  int icon;
   int sunX[2];
   int sunIconY, sunTimeY, sunAreaX;
   int iconX, iconY;
@@ -32,20 +33,22 @@ struct Place {
 
 // On 320×240 these are the positions that were checked on the board:
 // icon (240, 158), sun columns 238 and 288, times at y=141.
+// On 480×320 the icon grows a little and stays bottom-right.
 const Place& place(TFT_eSPI& tft) {
   static Place p;
   static int w = -1, h = -1;
   if (w == tft.width() && h == tft.height()) return p;
   w = tft.width();
   h = tft.height();
-  p.iconX = w - ICON - 8;
-  p.iconY = h - ICON - 10;
+  p.icon = layout::homeWeatherIcon(tft);
+  p.iconX = w - p.icon - 8;
+  p.iconY = h - p.icon - 10;
   p.textRight = p.iconX - 8;
-  p.textLeft = 100;
+  p.textLeft = layout::wide(tft) ? 140 : 100;
   p.clearY = p.iconY + 4;
-  p.tempBaseline = p.iconY + 30;
-  p.precipY = p.iconY + 39;
-  p.humidityY = p.iconY + 59;
+  p.tempBaseline = p.iconY + p.icon * 30 / 72;
+  p.precipY = p.iconY + p.icon * 39 / 72;
+  p.humidityY = p.iconY + p.icon * 59 / 72;
   p.sunX[1] = w - 32;
   p.sunX[0] = p.sunX[1] - 50;
   p.sunAreaX = w - 110;
@@ -370,10 +373,10 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
   const WeatherReport& w = weather::current();
   if (demoStep_ >= 0) {
     drawWeatherIcon(tft, p.iconX, p.iconY, static_cast<IconKind>(demoStep_ / 2),
-                    demoStep_ % 2 == 1, moonPhaseOf(w));
+                    demoStep_ % 2 == 1, moonPhaseOf(w), p.icon);
   } else if (w.ok) {
     drawWeatherIcon(tft, p.iconX, p.iconY, iconForCode(w.conditionCode), !w.isDay,
-                    moonPhaseOf(w));
+                    moonPhaseOf(w), p.icon);
   }
 
   fonts::use(tft, fonts::Id::Temp);

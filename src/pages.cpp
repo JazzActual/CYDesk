@@ -3,6 +3,7 @@
 #include <WiFi.h>
 
 #include "fonts.h"
+#include "layout.h"
 #include "qr_draw.h"
 #include "settings.h"
 #include "settings_web.h"
@@ -105,21 +106,23 @@ void drawFinishSetup(TFT_eSPI& tft) {
   // The QR code uses the IP address rather than cydesk.local: phones open it
   // instantly, while ".local" names can take a few seconds to look up.
   const String url = "http://" + WiFi.localIP().toString();
-  const int qrSize = drawQrCode(tft, url.c_str(), 12, 44, 120);
+  const int qrMax = layout::setupQrSize(tft);
+  const int qrSize = drawQrCode(tft, url.c_str(), 12, 44, qrMax);
 
   const int x = 12 + qrSize + 14;
+  const int copyStep = layout::tall(tft) ? 22 : 18;
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::accent(), theme::BG);
   tft.drawString("Finish setup", 12, 10, 4);
 
   tft.setTextColor(theme::TEXT, theme::BG);
   tft.drawString("Scan, or open this", x, 46, 2);
-  tft.drawString("on a phone or computer", x, 64, 2);
-  tft.drawString("on the same Wi-Fi:", x, 82, 2);
+  tft.drawString("on a phone or computer", x, 46 + copyStep, 2);
+  tft.drawString("on the same Wi-Fi:", x, 46 + 2 * copyStep, 2);
   tft.setTextColor(theme::PINK, theme::BG);
-  tft.drawString(String(settings_web::HOSTNAME) + ".local", x, 108, 4);
+  tft.drawString(String(settings_web::HOSTNAME) + ".local", x, 46 + 3 * copyStep + 8, 4);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString("or " + WiFi.localIP().toString(), x, 140, 2);
+  tft.drawString("or " + WiFi.localIP().toString(), x, 46 + 4 * copyStep + 26, 2);
 
   tft.setTextDatum(BC_DATUM);
   tft.drawString("Add your name, ZIP code and WeatherAPI key", tft.width() / 2, tft.height() - 10, 2);
@@ -148,13 +151,14 @@ void StatusPage::draw(TFT_eSPI& tft) {
   tft.drawString("Settings check", 12, 12, 4);
 
   const int labelX = 12, valueX = 104, valueWidth = tft.width() - valueX - 8;
-  int y = 56;
+  const int pitch = layout::statusRowPitch(tft);
+  int y = layout::tall(tft) ? 64 : 56;
   auto row = [&](const char* label, const String& value, uint16_t colour) {
     tft.setTextColor(theme::MUTED, theme::BG);
     tft.drawString(label, labelX, y, 2);
     tft.setTextColor(colour, theme::BG);
     tft.drawString(fitText(tft, value, valueWidth, 2), valueX, y, 2);
-    y += 28;
+    y += pitch;
   };
 
   if (shownConnected_) {

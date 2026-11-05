@@ -9,7 +9,7 @@
 
 A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and a few optional accounts. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
 
-As of 11/5/2026 CYDesk has only been tested on the 2.8 inch CYD. Plans to add support for the 3.5" and 4.0" CYD soon.
+CYDesk 3.5 supports the 2.8" and 3.5" resistive Cheap Yellow Displays. The 2.8" board is the one that has been lived with day to day. The 3.5" build uses the same pages and settings; layouts stretch to 480×320 instead of letterboxing the 2.8" positions. The capacitive 3.5" (ending in **C**) and the 4" boards are still not supported.
 
 ## Put it on a board
 
@@ -108,7 +108,7 @@ Weather refreshes about every 15 minutes and covers the current conditions, sunr
 | 2.8" | E32R28T / ESP32-2432S028 | 240×320, ILI9341 | 2.8 inch |
 | 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796 | 3.5 inch |
 
-The 3.5" build has not been tried on that hardware yet. The layout keeps the 2.8" positions and drops the extra height toward the middle. The capacitive 3.5" (the model ending in **C**) and the 4" boards are not supported.
+On the 3.5" board, Home still anchors weather to the bottom-right (so the 2.8" clock block stays where it was approved), and the hero-stat pages (Badge, WiGLE, Wardrift, Stars) stretch their mid band instead of sliding a fixed 240 px strip down. Hourly tiles and the setup QR grow a little with the taller screen. If colours look swapped or touch feels dead after flashing 3.5", say so — those are the two board quirks that still need a real panel to confirm. The capacitive 3.5" (ending in **C**) and the 4" boards are not this build.
 
 ## Build from source
 

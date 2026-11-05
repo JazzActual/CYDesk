@@ -4,6 +4,7 @@
 
 #include "count_text.h"
 #include "fonts.h"
+#include "layout.h"
 #include "theme.h"
 #include "wardrift_service.h"
 
@@ -38,9 +39,10 @@ bool loginSaved(const Settings& s) {
   return s.wardriftUser.length() > 0 && s.wardriftPass.length() > 0;
 }
 
-// Same positions as local/previews/wardrift_preview.py.
+// Same positions as local/previews/wardrift_preview.py on 320×240; mid band
+// stretches on a taller screen (see layout::heroStats).
 void drawStats(TFT_eSPI& tft) {
-  const int dy = tft.height() <= 240 ? 0 : (tft.height() - 240) / 2;
+  const layout::HeroStats L = layout::heroStats(tft.height());
   const wardrift::Stats& stats = wardrift::current();
   if (!stats.ok) {
     if (wardrift::lastError().length()) {
@@ -60,13 +62,13 @@ void drawStats(TFT_eSPI& tft) {
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::accent(), theme::BG);
   const int nameMax = tft.width() - 2 * MARGIN - (factionW ? factionW + 8 : 0);
-  tft.drawString(fitWidth(tft, stats.name, nameMax), MARGIN, 12);
+  tft.drawString(fitWidth(tft, stats.name, nameMax), MARGIN, L.nameY);
 
   if (factionW) {
     fonts::use(tft, fonts::Id::Small);
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(theme::PINK, theme::BG);
-    tft.drawString(stats.faction, tft.width() - MARGIN, 18);
+    tft.drawString(stats.faction, tft.width() - MARGIN, L.nameY + 6);
   }
 
   String sub = "level " + String(stats.level);
@@ -75,17 +77,17 @@ void drawStats(TFT_eSPI& tft) {
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString(fitWidth(tft, sub, tft.width() - 2 * MARGIN), MARGIN, 40);
+  tft.drawString(fitWidth(tft, sub, tft.width() - 2 * MARGIN), MARGIN, L.subY);
 
   fonts::use(tft, fonts::Id::Clock);
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(theme::TEXT, theme::BG);
-  tft.drawString(compactCount(stats.networks), tft.width() / 2, 104 + dy);
+  tft.drawString(compactCount(stats.networks), tft.width() / 2, L.heroY);
 
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TC_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString("networks", tft.width() / 2, 134 + dy);
+  tft.drawString("networks", tft.width() / 2, L.heroLabelY);
 
   const int32_t values[] = {stats.routes, stats.threats};
   const char* labels[] = {"Routes", "Threats"};
@@ -95,10 +97,10 @@ void drawStats(TFT_eSPI& tft) {
     fonts::use(tft, fonts::Id::Medium);
     tft.setTextDatum(MC_DATUM);
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(compactCount(values[i]), cx, 158 + dy);
+    tft.drawString(compactCount(values[i]), cx, L.rowY);
     fonts::use(tft, fonts::Id::Tiny);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(labels[i], cx, 184 + dy);
+    tft.drawString(labels[i], cx, L.rowLabelY);
   }
 
   String footer;

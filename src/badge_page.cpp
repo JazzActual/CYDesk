@@ -4,6 +4,7 @@
 
 #include "count_text.h"
 #include "fonts.h"
+#include "layout.h"
 #include "theme.h"
 #include "wdgwars_service.h"
 
@@ -34,11 +35,10 @@ String fitWidth(TFT_eSPI& tft, const String& text, int maxWidth) {
   return fitted;
 }
 
-// Same positions as local/previews/wdgwars_preview.py.
+// Same positions as local/previews/wdgwars_preview.py on 320×240; mid band
+// stretches on a taller screen (see layout::heroStats).
 void drawStats(TFT_eSPI& tft) {
-  // The 2.8" screen is 240 px tall. A taller screen drops this block toward
-  // the middle so it doesn't sit in a band under the name.
-  const int dy = tft.height() <= 240 ? 0 : (tft.height() - 240) / 2;
+  const layout::HeroStats L = layout::heroStats(tft.height());
   const wdg::Stats& stats = wdg::current();
   if (!stats.ok) {
     if (wdg::lastError().length()) {
@@ -59,13 +59,13 @@ void drawStats(TFT_eSPI& tft) {
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::accent(), theme::BG);
   const int nameMax = tft.width() - 2 * MARGIN - (gangW ? gangW + 8 : 0);
-  tft.drawString(fitWidth(tft, stats.username, nameMax), MARGIN, 12);
+  tft.drawString(fitWidth(tft, stats.username, nameMax), MARGIN, L.nameY);
 
   if (gangW) {
     fonts::use(tft, fonts::Id::Small);
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(theme::PINK, theme::BG);
-    tft.drawString(gang, tft.width() - MARGIN, 18);
+    tft.drawString(gang, tft.width() - MARGIN, L.nameY + 6);
   }
 
   String badges = String(stats.badges) + (stats.badges == 1 ? " badge" : " badges");
@@ -73,17 +73,17 @@ void drawStats(TFT_eSPI& tft) {
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString(badges, MARGIN, 40);
+  tft.drawString(badges, MARGIN, L.subY);
 
   fonts::use(tft, fonts::Id::Clock);
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(theme::TEXT, theme::BG);
-  tft.drawString(compactCount(stats.total), tft.width() / 2, 104 + dy);
+  tft.drawString(compactCount(stats.total), tft.width() / 2, L.heroY);
 
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TC_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString("total", tft.width() / 2, 134 + dy);
+  tft.drawString("total", tft.width() / 2, L.heroLabelY);
 
   const int32_t values[] = {stats.wifi, stats.ble, stats.aircraft, stats.mesh};
   const char* labels[] = {"WiFi", "BLE", "Air", "Mesh"};
@@ -92,10 +92,10 @@ void drawStats(TFT_eSPI& tft) {
     const int cx = colW * i + colW / 2;
     fonts::use(tft, fonts::Id::Medium);
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(compactCount(values[i]), cx, 158 + dy);
+    tft.drawString(compactCount(values[i]), cx, L.rowY);
     fonts::use(tft, fonts::Id::Tiny);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(labels[i], cx, 184 + dy);
+    tft.drawString(labels[i], cx, L.rowLabelY);
   }
 
   if (stats.haveRecent) {
