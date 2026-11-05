@@ -69,7 +69,7 @@ void drawStats(TFT_eSPI& tft) {
 
   fonts::use(tft, fonts::Id::Medium);
   tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(theme::CYAN, theme::BG);
+  tft.setTextColor(theme::accent(), theme::BG);
   const int nameMax = tft.width() - 2 * MARGIN - (gangW ? gangW + 8 : 0);
   tft.drawString(fitWidth(tft, stats.username, nameMax), MARGIN, 12);
 

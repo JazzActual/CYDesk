@@ -2,6 +2,8 @@
 
 #include <Preferences.h>
 
+#include "theme.h"
+
 namespace {
 // Preferences groups keys into "namespaces" (max 15 chars). Keys are max 15 chars too.
 constexpr const char* NVS_NAMESPACE = "cydesk";
@@ -19,8 +21,13 @@ void Settings::load() {
   clock24h   = prefs.getBool("clock24h", false);
   petAnimal  = prefs.getUChar("pet", static_cast<uint8_t>(PetAnimal::Fox));
   petMode    = prefs.getUChar("petmode", static_cast<uint8_t>(PetMode::Reacts));
+  // isKey first: getUInt logs an error when the key has never been saved.
+  accent     = prefs.isKey("accent") ? prefs.getUInt("accent", theme::DEFAULT_ACCENT)
+                                     : theme::DEFAULT_ACCENT;
+  accent &= 0xFFFFFFu;
   if (petAnimal > static_cast<uint8_t>(PetAnimal::Owl)) petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
   if (petMode > static_cast<uint8_t>(PetMode::Reacts)) petMode = static_cast<uint8_t>(PetMode::Reacts);
+  theme::setAccent(accent);
   placeLabel = prefs.getString("place", "");
   const bool dropBadge = prefs.isKey("badge");
   prefs.end();
@@ -45,6 +52,7 @@ void Settings::save() const {
   prefs.putBool("clock24h", clock24h);
   prefs.putUChar("pet", petAnimal);
   prefs.putUChar("petmode", petMode);
+  prefs.putUInt("accent", accent & 0xFFFFFFu);
   prefs.putString("place", placeLabel);
   prefs.remove("city");  // left over from before the switch to ZIP codes
   prefs.end();

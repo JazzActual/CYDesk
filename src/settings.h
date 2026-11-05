@@ -16,6 +16,8 @@ struct Settings {
   String wdgKey;           // WDGWars API key; the badge page shows that account's stats
   bool fahrenheit = true;  // false = Celsius
   bool clock24h = false;   // true = "13:07", false = "1:07 PM"
+  // Highlight color, #RRGGBB. Default cyan. Pink is not part of this.
+  uint32_t accent = 0x00E5FFu;
 
   // Desk pet. Defaults show a fox that reacts, so there's something on screen
   // before the settings page is opened.

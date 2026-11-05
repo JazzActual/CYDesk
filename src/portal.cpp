@@ -9,7 +9,7 @@ void drawInstructions(TFT_eSPI& tft, const char* reason) {
   tft.fillScreen(theme::BG);
 
   tft.setTextDatum(TL_DATUM);  // top-left
-  tft.setTextColor(theme::CYAN, theme::BG);
+  tft.setTextColor(theme::accent(), theme::BG);
   tft.drawString(reason, 16, 14, 4);
 
   const int x = 16;

@@ -106,7 +106,7 @@ void drawSunEventIcon(TFT_eSPI& tft, int cx, int top, bool rising) {
   tft.drawWideLine(x0 + 2, horizonY, x0 + 24, horizonY, 1.5f, theme::MUTED, theme::BG);
   const int ax = x0 + 23;
   if (rising) {
-    tft.fillTriangle(ax, top + 2, ax - 3, top + 6, ax + 3, top + 6, theme::CYAN);
+    tft.fillTriangle(ax, top + 2, ax - 3, top + 6, ax + 3, top + 6, theme::accent());
   } else {
     tft.fillTriangle(ax, top + 7, ax - 3, top + 3, ax + 3, top + 3, theme::PINK);
   }
@@ -274,7 +274,7 @@ void HomePage::drawGreeting(TFT_eSPI& tft, int hour) {
   tft.fillRect(0, GREETING_Y - 2, tft.width(), 32, theme::BG);
   fonts::use(tft, fonts::Id::Medium);
   tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(theme::CYAN, theme::BG);
+  tft.setTextColor(theme::accent(), theme::BG);
   tft.drawString(fitWidth(tft, text, tft.width() - 2 * MARGIN), MARGIN, GREETING_Y);
 }
 
@@ -336,7 +336,7 @@ void HomePage::drawTime(TFT_eSPI& tft) {
 
   if (!settings_.clock24h) {
     fonts::use(tft, fonts::Id::Medium);
-    tft.setTextColor(theme::CYAN, theme::BG);
+    tft.setTextColor(theme::accent(), theme::BG);
     tft.drawString(now.tm_hour < 12 ? "AM" : "PM", MARGIN + digitsWidth + 6, TIME_BASELINE);
   }
 }

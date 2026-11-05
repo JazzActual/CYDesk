@@ -1,8 +1,11 @@
 #include "settings_web.h"
 
+#include <math.h>
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFi.h>
+
+#include "theme.h"
 
 namespace settings_web {
 namespace {
@@ -31,26 +34,100 @@ String escapeHtml(const String& in) {
   return out;
 }
 
-// Styling to roughly match the WDGWars card: navy, cyan, pink.
+// "#00e5ff" from the 24-bit color stored in flash. The color input needs
+// exactly this form.
+String hexColor(uint32_t rgb24) {
+  char buf[8];
+  snprintf(buf, sizeof(buf), "#%06x", rgb24 & 0xFFFFFFu);
+  return String(buf);
+}
+
+// Relative luminance, 0 = black, 1 = white. Used so the Save button's text
+// stays readable on a dark accent as well as on cyan.
+float channel(uint8_t c) {
+  const float x = c / 255.f;
+  return x <= 0.04045f ? x / 12.92f : powf((x + 0.055f) / 1.055f, 2.4f);
+}
+
+float relLuma(uint32_t rgb24) {
+  return 0.2126f * channel((rgb24 >> 16) & 255) + 0.7152f * channel((rgb24 >> 8) & 255) +
+         0.0722f * channel(rgb24 & 255);
+}
+
+float contrast(float a, float b) {
+  const float hi = a > b ? a : b;
+  const float lo = a > b ? b : a;
+  return (hi + 0.05f) / (lo + 0.05f);
+}
+
+// Navy when that reads more clearly on the accent, otherwise the off-white.
+const char* onAccent(uint32_t rgb24) {
+  const float L = relLuma(rgb24);
+  const float navy = relLuma(0x0A1018);
+  const float paper = relLuma(0xE6EDF3);
+  return contrast(L, navy) >= contrast(L, paper) ? "#0a1018" : "#e6edf3";
+}
+
+// Accepts the value an <input type="color"> submits: "#rrggbb".
+bool parseHexColor(const String& in, uint32_t& out) {
+  if (in.length() != 7 || in.charAt(0) != '#') return false;
+  for (int i = 1; i < 7; i++) {
+    if (!isxdigit(static_cast<unsigned char>(in.charAt(i)))) return false;
+  }
+  out = strtoul(in.c_str() + 1, nullptr, 16) & 0xFFFFFFu;
+  return true;
+}
+
+// Styling to match the desk buddy: navy, the saved accent, and pink for errors.
+// --accent is filled in per request so the page opens in the saved color.
 const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CYDesk settings</title>
 <style>
- body{background:#0a1018;color:#e6edf3;font-family:-apple-system,system-ui,sans-serif;margin:0;padding:20px;max-width:520px}
- h1{color:#00e5ff;font-size:22px;margin:0 0 4px}
+ body{background:#0a1018;color:#e6edf3;font-family:-apple-system,system-ui,sans-serif;margin:0;padding:20px;max-width:520px;accent-color:var(--accent,#00e5ff)}
+ h1{color:var(--accent,#00e5ff);font-size:22px;margin:0 0 4px}
  .sub{color:#5d7b8c;font-size:13px;margin-bottom:18px}
  label{display:block;color:#5d7b8c;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px}
  input[type=text],input[type=password]{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
    border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px}
+ input[type=text]:focus,input[type=password]:focus{border-color:var(--accent,#00e5ff);outline:none}
  .units label{display:inline;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin-right:18px}
  .hint{color:#5d7b8c;font-size:12px;margin-top:4px}
- button{margin-top:22px;width:100%;background:#00e5ff;color:#0a1018;border:0;border-radius:8px;padding:12px;font-size:17px;font-weight:600}
+ .color-row{display:flex;align-items:center;gap:12px}
+ input[type=color]{width:72px;height:42px;padding:3px;background:#0f2531;border:1px solid #1d3a4a;border-radius:8px}
+ #accent-hex{font-size:16px;letter-spacing:.04em}
+ button{margin-top:22px;width:100%;background:var(--accent,#00e5ff);color:var(--on-accent,#0a1018);border:0;border-radius:8px;padding:12px;font-size:17px;font-weight:600}
  .status{background:#0f2531;border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.6}
- .ok{color:#00e5ff}.bad{color:#ff2d95}.wait{color:#5d7b8c}
- a{color:#00e5ff}
+ .ok{color:var(--accent,#00e5ff)}.bad{color:#ff2d95}.wait{color:#5d7b8c}
+ a{color:var(--accent,#00e5ff)}
 </style></head><body>
 )HTML";
+
+// Updates the page as the picker moves, before Save is pressed.
+const char PAGE_SCRIPT[] PROGMEM = R"HTML(<script>
+(function(){
+  var picker=document.getElementById('accent');
+  var hex=document.getElementById('accent-hex');
+  var root=document.documentElement;
+  function channel(c){c=c/255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+  function luma(h){
+    var n=parseInt(h.slice(1),16);
+    return 0.2126*channel((n>>16)&255)+0.7152*channel((n>>8)&255)+0.0722*channel(n&255);
+  }
+  function contrast(a,b){var hi=a>b?a:b, lo=a>b?b:a; return (hi+0.05)/(lo+0.05);}
+  var navy=luma('#0a1018'), paper=luma('#e6edf3');
+  function apply(){
+    var c=picker.value;
+    var L=luma(c);
+    root.style.setProperty('--accent', c);
+    root.style.setProperty('--on-accent', contrast(L,navy)>=contrast(L,paper)?'#0a1018':'#e6edf3');
+    hex.textContent=c.toUpperCase();
+  }
+  picker.addEventListener('input', apply);
+  apply();
+})();
+</script>)HTML";
 
 void handleRoot() {
   const Settings& s = *settings;
@@ -58,8 +135,12 @@ void handleRoot() {
   const bool checking = s.isComplete() && s.placeLabel.isEmpty() && placeError->isEmpty();
 
   String html;
-  html.reserve(7000);
+  html.reserve(10000);
   html += FPSTR(PAGE_HEAD);
+  // The saved color, so the first paint matches the desk buddy before the
+  // script runs. Dragging the picker updates the same variables live.
+  html += "<style>:root{--accent:" + hexColor(s.accent) + ";--on-accent:" + onAccent(s.accent) +
+          "}</style>";
   // While the board is still checking the ZIP/key, reload every 3 s to show the result.
   if (justSaved && checking) html += "<meta http-equiv='refresh' content='3;url=/?saved=1'>";
 
@@ -82,6 +163,13 @@ void handleRoot() {
 
   // The form
   html += "<form method='POST' action='/save'>";
+
+  html += "<label for='accent'>Accent color</label><div class='color-row'>"
+          "<input type='color' id='accent' name='accent' value='" +
+          hexColor(s.accent) + "'><span id='accent-hex'>" + hexColor(s.accent) +
+          "</span></div>"
+          "<div class='hint'>Colors the heading, links, choices, and Save button on this page, "
+          "and the highlights on the desk buddy. Pink stays for errors, the umbrella, and sunset.</div>";
 
   html += "<label for='name'>Your name (for the greeting)</label>"
           "<input type='text' id='name' name='name' maxlength='20' value='" +
@@ -143,6 +231,7 @@ void handleRoot() {
 
   html += "<button type='submit'>Save to desk buddy</button></form>";
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
+  html += FPSTR(PAGE_SCRIPT);
   html += "</body></html>";
 
   server.send(200, "text/html; charset=utf-8", html);
@@ -179,14 +268,18 @@ void handleSave() {
               : animal == "raccoon" ? static_cast<uint8_t>(PetAnimal::Raccoon)
               : animal == "owl" ? static_cast<uint8_t>(PetAnimal::Owl)
                                 : static_cast<uint8_t>(PetAnimal::Fox);
+  uint32_t accent = s.accent;
+  if (parseHexColor(server.arg("accent"), accent)) s.accent = accent;
+  theme::setAccent(s.accent);
   s.save();
   changed = true;
 
   // Never print either key, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s pet=%u mode=%u\n",
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s pet=%u mode=%u accent=%s\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
                 s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
-                s.wdgKey.length() ? "set" : "none", s.petAnimal, s.petMode);
+                s.wdgKey.length() ? "set" : "none", s.petAnimal, s.petMode,
+                hexColor(s.accent).c_str());
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

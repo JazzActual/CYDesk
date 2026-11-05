@@ -103,7 +103,7 @@ void HourlyPage::draw(TFT_eSPI& tft) {
     formatHour(hour.epoch, settings_.clock24h, label, sizeof(label));
     fonts::use(tft, fonts::Id::Small);
     tft.setTextDatum(TC_DATUM);
-    tft.setTextColor(current ? theme::CYAN : theme::TEXT, theme::BG);
+    tft.setTextColor(current ? theme::accent() : theme::TEXT, theme::BG);
     tft.drawString(label, cx, top + 4);
 
     drawWeatherIcon(tft, cx - ICON / 2, top + 22, iconForCode(hour.conditionCode), !hour.isDay,

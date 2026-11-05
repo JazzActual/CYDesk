@@ -114,7 +114,7 @@ void updateHoldBar() {
   if (wanted == shownWidth) return;
   const int y = tft.height() - HOLD_BAR_HEIGHT;
   if (wanted > shownWidth) {
-    tft.fillRect(shownWidth, y, wanted - shownWidth, HOLD_BAR_HEIGHT, theme::CYAN);
+    tft.fillRect(shownWidth, y, wanted - shownWidth, HOLD_BAR_HEIGHT, theme::accent());
   } else if (wanted == 0 && !touch.longPressFired()) {
     // Let go early: put the page back the way it was.
     pages.redraw();
