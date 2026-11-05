@@ -4,13 +4,15 @@
 //   1. Home      greeting, clock, date, weather icon, temperature, humidity
 //   2. Hourly    next 12 hours: hour, icon, temperature, rain chance
 //   3. Badge     WDGWars stats
-//   4. Status    settings / Wi-Fi / weather diagnostics
+//   4. WiGLE     rank and discovery counts
+//   5. Status    settings / Wi-Fi / weather diagnostics
 //
 // Setup happens in two parts:
 //   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (DeskBuddy-Setup).
 //      Holding a finger on the screen for 5 seconds reopens it.
 //   2. On the home Wi-Fi, the board serves a settings page at
-//      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key and units.
+//      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key,
+//      WiGLE login, and units.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -30,6 +32,8 @@
 #include "touch.h"
 #include "weather_service.h"
 #include "wdgwars_service.h"
+#include "wigle_page.h"
+#include "wigle_service.h"
 #include "wifi_link.h"
 
 // Landscape. If everything comes out upside down, change this to 3.
@@ -48,6 +52,7 @@ Settings settings;
 HomePage homePage(settings);
 HourlyPage hourlyPage(settings);
 BadgePage badgePage(settings);
+WiglePage wiglePage(settings);
 StatusPage statusPage(settings, weather::lastError());
 
 void ledsOff() {
@@ -91,6 +96,7 @@ void serviceSettingsPage() {
   if (settings_web::takeChanged()) {
     weather::refreshSoon();  // ZIP/key/units may have changed
     wdg::prepare(settings);   // drop the previous account before the redraw if the key changed
+    wigle::prepare(settings);
     pages.redraw();
   }
   if (settings_web::takeIconTestRequest()) {
@@ -138,6 +144,7 @@ void setup() {
   pages.add(&homePage);
   pages.add(&hourlyPage);
   pages.add(&badgePage);
+  pages.add(&wiglePage);
   pages.add(&statusPage);
 
   settings.load();
@@ -177,10 +184,11 @@ void loop() {
   }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
-  // One HTTPS download at a time. Weather first, then the WDGWars stats.
+  // One HTTPS download at a time. Weather, then WDGWars, then WiGLE.
   if (networkReady) weather::update(settings);
   if (weather::takeChanged()) pages.dataChanged();
   if (networkReady) wdg::update(settings);
+  if (networkReady) wigle::update(settings);
   updateHoldBar();
   pages.update();
 }

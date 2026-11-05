@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 
+#include "count_text.h"
 #include "fonts.h"
 #include "theme.h"
 #include "wdgwars_service.h"
@@ -31,19 +32,6 @@ String fitWidth(TFT_eSPI& tft, const String& text, int maxWidth) {
     if (tft.textWidth(fitted + "...") <= maxWidth) return fitted + "...";
   }
   return fitted;
-}
-
-// 39619 -> "39,619". The 56 px font has the comma; the smaller fonts do too.
-String withCommas(int32_t n) {
-  if (n < 0) n = 0;
-  const String digits = String(static_cast<long>(n));
-  String out;
-  const int len = digits.length();
-  for (int i = 0; i < len; i++) {
-    if (i > 0 && (len - i) % 3 == 0) out += ',';
-    out += digits[i];
-  }
-  return out;
 }
 
 // Same positions as local/previews/wdgwars_preview.py.
@@ -90,7 +78,7 @@ void drawStats(TFT_eSPI& tft) {
   fonts::use(tft, fonts::Id::Clock);
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(theme::TEXT, theme::BG);
-  tft.drawString(withCommas(stats.total), tft.width() / 2, 104 + dy);
+  tft.drawString(compactCount(stats.total), tft.width() / 2, 104 + dy);
 
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TC_DATUM);
@@ -104,14 +92,14 @@ void drawStats(TFT_eSPI& tft) {
     const int cx = colW * i + colW / 2;
     fonts::use(tft, fonts::Id::Medium);
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(withCommas(values[i]), cx, 158 + dy);
+    tft.drawString(compactCount(values[i]), cx, 158 + dy);
     fonts::use(tft, fonts::Id::Tiny);
     tft.setTextColor(theme::MUTED, theme::BG);
     tft.drawString(labels[i], cx, 184 + dy);
   }
 
   if (stats.haveRecent) {
-    const String footer = "today " + withCommas(stats.today) + "  \u00b7  week " + withCommas(stats.week);
+    const String footer = "today " + compactCount(stats.today) + "  \u00b7  week " + compactCount(stats.week);
     fonts::use(tft, fonts::Id::Small);
     tft.setTextDatum(BC_DATUM);
     tft.setTextColor(theme::MUTED, theme::BG);

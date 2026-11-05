@@ -38,7 +38,13 @@ A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S0
    `GET /api/me`. The key is stored like the weather key and is never printed. The board does not
    upload anything. Refreshes every 15 minutes. A failed refresh keeps the last result and marks
    it stale. Nothing saved: "No WDGWars key yet". A picture badge can come back later (step 10).
-4. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
+4. **WiGLE** (`wigle_page.cpp`): one account's rank, month rank, and discovery counts
+   (Wi-Fi, cell, Bluetooth, plus this month's uploads) from a read-only
+   `GET https://api.wigle.net/api/v2/stats/user`. The API name and token are HTTP Basic
+   auth, stored like the other keys, and never printed. The board does not upload anything.
+   Refreshes every 15 minutes, after the WDGWars fetch. A failed refresh keeps the last
+   result and marks it stale. Nothing saved: "No WiGLE login yet".
+5. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
 
 ## Desk pet
 
@@ -91,6 +97,10 @@ browser or printed to the serial log. Nothing private is kept in the repo.
     sunset for today and tomorrow, and 48 hourly forecasts (rain chance = max of rain and snow).
 - **WDGWars**: one read-only `GET https://wdgwars.pl/api/me` every 15 minutes, after the weather
   fetch, so only one HTTPS download runs at a time. The key goes in a header and is never printed.
+- **WiGLE**: one read-only `GET https://api.wigle.net/api/v2/stats/user` every 15 minutes, after
+  the WDGWars fetch. HTTP Basic auth with the API name and token. The fields drawn are `user`,
+  `rank`, `monthRank`, and `statistics.discoveredWiFi`, `discoveredCell`, `discoveredBt`, and
+  `eventMonthCount`. Neither credential is printed.
 
 ## Build steps (each one ends with something visible on the screen, then a commit)
 
@@ -110,7 +120,7 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 
 Do the screen toggles first, so each new page can be switched off as it lands. BLE is last: it shares the radio with Wi-Fi.
 
-11. [ ] **WiGLE stats page**, same idea as the WDGWars badge. Read-only `GET https://api.wigle.net/api/v2/stats/user` with HTTP Basic auth (the API name and token from the WiGLE account). Draw rank and the discovery counts (Wi-Fi, cell, Bluetooth — confirm the exact JSON fields before laying the page out). The token is stored in flash like the other keys and is never printed. One HTTPS download at a time, refresh every 15 minutes, keep the last result and mark it stale if a fetch fails. Empty state when no token is saved.
+11. [x] **WiGLE stats page.** Rank, month rank, and discovery counts (Wi-Fi, cell, Bluetooth, this month) from a read-only `GET /api/v2/stats/user`. API name and token are HTTP Basic auth, stored in flash, never printed. Counts on this page and the WDGWars badge are shortened (1.2k, 12.5k, 1.25M). Empty state when no login is saved.
 12. [x] **Bear** on the desk pet list, same 20×20 mirrored left-half style as the fox, raccoon, and owl (tail overlay, shared accessories). Chosen next to the other animals on the settings page.
 13. [ ] **Toggle extra screens.** Home and Hourly always stay in the tap cycle. Each add-on page (WDGWars, WiGLE, GitHub stars, and any added later) gets a checkbox on the settings page and is skipped when it is off. A page that is on but has no key still shows its empty state. Status stays in the cycle as the diagnostics page.
 14. [ ] **GitHub star tracker page.** Settings hold one or more `owner/repo` pairs. For a public repo, `GET https://api.github.com/repos/<owner>/<repo>` returns `stargazers_count` with no key (60 requests an hour; one repo every 15 minutes fits). The page shows the repo name and the star count. A token is only needed for a private repo or a higher limit — decide that when building it. Same fetch rules: one HTTPS call at a time, keep the last count if a fetch fails.

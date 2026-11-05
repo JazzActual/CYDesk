@@ -14,6 +14,8 @@ struct Settings {
   String zip;              // weather location (US ZIP / postcode), e.g. "60601"
   String weatherKey;       // the user's own WeatherAPI.com API key
   String wdgKey;           // WDGWars API key; the badge page shows that account's stats
+  String wigleName;        // WiGLE API name; never printed
+  String wigleToken;       // WiGLE API token; never printed
   bool fahrenheit = true;  // false = Celsius
   bool clock24h = false;   // true = "13:07", false = "1:07 PM"
   // Highlight color, #RRGGBB. Default cyan. Pink is not part of this.

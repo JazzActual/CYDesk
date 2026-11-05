@@ -135,7 +135,7 @@ void handleRoot() {
   const bool checking = s.isComplete() && s.placeLabel.isEmpty() && placeError->isEmpty();
 
   String html;
-  html.reserve(10000);
+  html.reserve(12000);
   html += FPSTR(PAGE_HEAD);
   // The saved color, so the first paint matches the desk buddy before the
   // script runs. Dragging the picker updates the same variables live.
@@ -195,6 +195,22 @@ void handleRoot() {
   if (s.wdgKey.length()) {
     html += "<div class='hint'><input type='checkbox' name='wdgclear' value='1'> "
             "Remove the saved WDGWars key</div>";
+  }
+
+  // Neither value is put back into the page. The checkbox clears both.
+  const bool wigleSaved = s.wigleName.length() && s.wigleToken.length();
+  html += "<label for='wiglname'>WiGLE API name</label>"
+          "<input type='password' id='wiglname' name='wiglname' maxlength='48' autocomplete='off' placeholder='";
+  html += s.wigleName.length() ? "saved &mdash; leave blank to keep it" : "paste the API name";
+  html += "'>";
+  html += "<label for='wigltoken'>WiGLE API token</label>"
+          "<input type='password' id='wigltoken' name='wigltoken' maxlength='80' autocomplete='off' placeholder='";
+  html += s.wigleToken.length() ? "saved &mdash; leave blank to keep it" : "paste the API token";
+  html += "'><div class='hint'>From your WiGLE account page. Shows rank and discoveries. "
+          "Leave a box blank to keep what's saved.</div>";
+  if (wigleSaved) {
+    html += "<div class='hint'><input type='checkbox' name='wigleclear' value='1'> "
+            "Remove the saved WiGLE login</div>";
   }
 
   html += "<label>Temperature units</label><div class='units'>";
@@ -260,6 +276,17 @@ void handleSave() {
   wdg.trim();
   if (wdg.length()) s.wdgKey = wdg;
   else if (server.hasArg("wdgclear")) s.wdgKey = "";
+  String wigleName = server.arg("wiglname");
+  wigleName.trim();
+  String wigleToken = server.arg("wigltoken");
+  wigleToken.trim();
+  if (server.hasArg("wigleclear")) {
+    s.wigleName = "";
+    s.wigleToken = "";
+  } else {
+    if (wigleName.length()) s.wigleName = wigleName;
+    if (wigleToken.length()) s.wigleToken = wigleToken;
+  }
   s.fahrenheit = server.arg("units") != "C";
   s.clock24h = server.arg("clock") == "24";
   const String mode = server.arg("petmode");
@@ -279,11 +306,12 @@ void handleSave() {
   changed = true;
 
   // Never print either key, only whether one is saved.
-  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s pet=%u mode=%u accent=%s\n",
+  Serial.printf("[web] saved: zip=%s key=%s units=%s clock=%s wdg=%s wigle=%s pet=%u mode=%u accent=%s\n",
                 s.zip.length() ? "set" : "missing", s.weatherKey.length() ? "set" : "missing",
                 s.fahrenheit ? "F" : "C", s.clock24h ? "24h" : "12h",
-                s.wdgKey.length() ? "set" : "none", s.petAnimal, s.petMode,
-                hexColor(s.accent).c_str());
+                s.wdgKey.length() ? "set" : "none",
+                (s.wigleName.length() && s.wigleToken.length()) ? "set" : "none",
+                s.petAnimal, s.petMode, hexColor(s.accent).c_str());
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

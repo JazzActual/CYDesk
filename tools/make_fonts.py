@@ -36,7 +36,7 @@ FONTS = [
     ("rajdhani_16", "Rajdhani-SemiBold.ttf", 16, ASCII + DEGREE + "·"),  # sun times, labels, "today · week"
     ("rajdhani_24", "Rajdhani-SemiBold.ttf", 24, ASCII + DEGREE),  # greeting, AM/PM
     ("rajdhani_40", "Rajdhani-SemiBold.ttf", 40, "0123456789-" + DEGREE + "FC "),  # temperature
-    ("rajdhani_56", "Rajdhani-SemiBold.ttf", 56, "0123456789:,- "),  # clock digits, WDGWars total
+    ("rajdhani_56", "Rajdhani-SemiBold.ttf", 56, "0123456789:,- .kM"),  # clock, and short counts (1.2k, 1.25M)
 ]
 
 

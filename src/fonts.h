@@ -15,7 +15,7 @@ enum class Id {
   Small,     // 16 px  sun times, rain chance, labels
   Medium,    // 24 px  greeting, AM/PM
   Temp,      // 40 px  temperature (digits, minus, degree sign, F, C only)
-  Clock,     // 56 px  clock (digits, colon, minus only)
+  Clock,     // 56 px  clock digits, and short counts (1.2k, 1.25M)
 };
 
 void use(TFT_eSPI& tft, Id id);

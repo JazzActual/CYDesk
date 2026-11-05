@@ -130,6 +130,8 @@ void StatusPage::draw(TFT_eSPI& tft) {
                    (settings_.clock24h ? ", 24-hour clock" : ", 12-hour clock"), theme::TEXT);
   row("Badge", settings_.wdgKey.length() ? "WDGWars stats" : "",
       settings_.wdgKey.length() ? theme::accent() : theme::TEXT);
+  const bool wigleSaved = settings_.wigleName.length() && settings_.wigleToken.length();
+  row("WiGLE", wigleSaved ? "stats" : "", wigleSaved ? theme::accent() : theme::TEXT);
   const char* animal = "None";
   if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Fox)) animal = "Fox";
   else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon)) animal = "Raccoon";
