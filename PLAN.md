@@ -37,7 +37,7 @@ A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S0
    WiFi, BLE, aircraft, mesh, badge count, today and the last 7 days) from a read-only
    `GET /api/me`. The key is stored like the weather key and is never printed. The board does not
    upload anything. Refreshes every 15 minutes. A failed refresh keeps the last result and marks
-   it stale. Nothing saved: "No WDGWars key yet". A picture badge can come back later (step 10).
+   it stale. Nothing saved: "No WDGWars key yet".
 4. **WiGLE** (`wigle_page.cpp`): one account's rank, month rank, and discovery counts
    (Wi-Fi, cell, Bluetooth, plus this month's uploads) from a read-only
    `GET https://api.wigle.net/api/v2/stats/user`. The API name and token are HTTP Basic
@@ -136,9 +136,9 @@ browser or printed to the serial log. Nothing private is kept in the repo.
 5b. [x] Desk pet: fox / raccoon / owl / none, reactions, settings (Off / Idle / Reacts + animal)
 6. [x] Moon phase with the weather layers drawn on top
 7. [x] Hourly page
-8. [ ] Badge page: WDGWars stats from a saved key
-9. [ ] Polish: offline/stale markers, memory check, fallbacks. A 4-digit code for the settings page was considered and dropped. Wi-Fi portal: the page is slow to pop up after joining CYDesk (the phone's connectivity checks hit "request handler not found"; answer those checks directly and scan for networks in the background).
-10. [ ] Later: picture badge again. An image embed or a bare image address, fitted through wsrv.nl and drawn with TJpg_Decoder. Shown when no WDGWars key is saved. Taken out so the badge page is WDGWars only for now.
+8. [x] Badge page: WDGWars stats from a saved key
+9. [x] Polish: Home and Hourly say stale or offline when the weather on screen is old, and say why when none has loaded yet. Status shows Wi-Fi, the weather check, and free memory. A 4-digit code for the settings page was considered and dropped. The setup page answers the phone's connectivity checks and scans for networks in the background.
+10. [x] **Picture badge, dropped.** An image on the Badge page was taken out so the page could stay WDGWars stats only. It is not coming back.
 
 ## Next batch (added 2026-11-04, not started)
 

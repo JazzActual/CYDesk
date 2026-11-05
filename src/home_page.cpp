@@ -212,7 +212,7 @@ void HomePage::startIconDemo() {
 String HomePage::weatherSignature() const {
   if (demoStep_ >= 0) return "demo" + String(demoStep_);
   const WeatherReport& w = weather::current();
-  if (!w.ok) return "none";
+  if (!w.ok) return String("none:") + weather::unavailableReason();
   const float temp = settings_.fahrenheit ? w.tempF : w.tempC;
   // Moon hundredths so a new phase redraws the icon on the next weather check.
   const int moon = isnan(w.moonPhase) ? -1 : lroundf(w.moonPhase * 100);
@@ -379,9 +379,12 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
   fonts::use(tft, fonts::Id::Temp);
   tft.setTextDatum(R_BASELINE);
   if (!w.ok) {
-    // No weather yet: just a placeholder temperature.
-    tft.setTextColor(theme::PANEL, theme::BG);
-    tft.drawString("--°", p.textRight, p.tempBaseline);
+    // No weather yet: say why, in the spot the temperature would use.
+    fonts::use(tft, fonts::Id::Small);
+    tft.setTextDatum(R_BASELINE);
+    tft.setTextColor(weather::unavailableIsError() ? theme::PINK : theme::MUTED, theme::BG);
+    tft.drawString(fitWidth(tft, weather::unavailableReason(), p.textRight - p.textLeft),
+                   p.textRight, p.tempBaseline);
     return;
   }
 

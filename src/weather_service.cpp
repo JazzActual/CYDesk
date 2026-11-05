@@ -68,4 +68,14 @@ const WeatherReport& current() { return lastGood; }
 const String& lastError() { return error; }
 bool stale() { return lastGood.ok && error.length() > 0; }
 
+String unavailableReason() {
+  if (WiFi.status() != WL_CONNECTED) return "Waiting for Wi-Fi";
+  if (error.length()) return error;
+  return "Waiting for weather";
+}
+
+bool unavailableIsError() {
+  return WiFi.status() == WL_CONNECTED && error.length() > 0;
+}
+
 }  // namespace weather

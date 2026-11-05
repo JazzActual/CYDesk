@@ -31,4 +31,10 @@ const String& lastError();
 // True when a later fetch failed and the numbers on screen are the previous ones.
 bool stale();
 
+// What to say when current().ok is false. "Waiting for Wi-Fi", the last error,
+// or "Waiting for weather".
+String unavailableReason();
+// True when that reason is a failed download, rather than a wait.
+bool unavailableIsError();
+
 }  // namespace weather

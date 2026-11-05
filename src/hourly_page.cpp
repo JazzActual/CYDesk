@@ -42,7 +42,15 @@ void formatHour(time_t epoch, bool use24h, char* buf, size_t n) {
 
 uint32_t HourlyPage::signature() const {
   const WeatherReport& w = weather::current();
-  if (!w.ok) return 1;
+  if (!w.ok) {
+    uint32_t hash = 2166136261u;
+    const String why = weather::unavailableReason();
+    for (unsigned i = 0; i < why.length(); i++) {
+      hash ^= why[i];
+      hash *= 16777619u;
+    }
+    return hash == 0 ? 3 : hash;
+  }
   uint32_t hash = 2166136261u;
   auto mix = [&](uint32_t v) {
     hash ^= v;
@@ -80,10 +88,12 @@ void HourlyPage::draw(TFT_eSPI& tft) {
   const int start = w.ok ? firstHour(w) : 0;
   const int count = w.ok ? max(0, min(TILES, w.hourCount - start)) : 0;
   if (count == 0) {
+    const String why = w.ok ? String("Waiting for weather") : weather::unavailableReason();
+    const bool failed = !w.ok && weather::unavailableIsError();
     fonts::use(tft, fonts::Id::Small);
     tft.setTextDatum(MC_DATUM);
-    tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString("Waiting for weather", tft.width() / 2, tft.height() / 2);
+    tft.setTextColor(failed ? theme::PINK : theme::MUTED, theme::BG);
+    tft.drawString(why, tft.width() / 2, tft.height() / 2);
     return;
   }
 
