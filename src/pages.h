@@ -50,8 +50,8 @@ class PageManager {
   size_t current_ = 0;
 };
 
-// Diagnostics page: shows the saved settings, Wi-Fi status and the weather
-// check result. Kept as the last page for now; may be removed in polish.
+// Diagnostics: Wi-Fi, the weather check, and the largest free memory block.
+// The rest of the settings live on the web page.
 struct Settings;
 class StatusPage : public Page {
  public:
@@ -60,12 +60,16 @@ class StatusPage : public Page {
       : settings_(settings), placeError_(placeError) {}
   const char* name() const override { return "Status"; }
   void draw(TFT_eSPI& tft) override;
-  void update(TFT_eSPI& tft) override;  // redraws when Wi-Fi connects/drops
+  void update(TFT_eSPI& tft) override;  // redraws when Wi-Fi, weather, or memory changes
 
  private:
+  String weatherLine() const;
+
   const Settings& settings_;
   const String& placeError_;
   bool shownConnected_ = false;
+  String shownWeather_;
+  uint32_t shownBlock_ = 0;
 };
 
 // Temporary stand-in page for step 2: shows its name and page number.

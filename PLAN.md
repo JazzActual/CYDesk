@@ -59,7 +59,7 @@ A desk buddy for two Cheap Yellow Display boards. The 2.8" E32R28T (ESP32-2432S0
 7. **Repos** (`github_page.cpp`): the list of saved repos, name and star count. It asks for
    a second repo until two are saved. Same fetch as Stars: every 15 minutes, one request
    at a time, up to four repos. A failed check keeps the last count.
-8. **Status** (temporary diagnostics): saved settings, Wi-Fi and the weather check result.
+8. **Status** (diagnostics): Wi-Fi, the weather check, and the largest free memory block. A download needs about 40 KB of that block. The other settings stay on the web page.
 
 ## Desk pet
 

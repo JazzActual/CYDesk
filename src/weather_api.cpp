@@ -118,6 +118,13 @@ WeatherReport fetchWeather(const Settings& settings) {
     result.error = "No Wi-Fi";
     return result;
   }
+  // The secure connection needs one contiguous block of about 40 KB. Starting
+  // it with less fails inside the library and still uses the last good weather.
+  if (ESP.getMaxAllocHeap() < 40 * 1024) {
+    result.error = "Not enough memory";
+    Serial.printf("[weather] not enough memory (max block %u)\n", ESP.getMaxAllocHeap());
+    return result;
+  }
 
   // HTTPS without checking the server's certificate. Fine for a desk toy
   // (worst case someone on the network fakes the weather); pinning the

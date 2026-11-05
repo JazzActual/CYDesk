@@ -48,7 +48,7 @@ Tap anywhere to go to the next one. It wraps around. On the settings page, unche
 5. **Wardrift.** One [wardrift.net](https://wardrift.net/) character: name, faction, level, class, networks, routes, threats, and a streak when there is one. The upload API key cannot read the dashboard, so the desk signs in with the username and password. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
 6. **Stars.** The first public GitHub repo in the list, as a big star count, with the repo address along the bottom. A thin line of one point per day appears once two local days have been saved (up to about three weeks). No token. Public repos only, written as `owner/repo`.
 7. **Repos.** The same repos as a list, name and count, once a second repo is saved. With only one, this page says to add another. Up to four repos. One request at a time, about every 15 minutes. A failed check keeps the last count.
-8. **Status.** Whether Wi-Fi is up, whether the keys are saved, and the result of the weather check. This page cannot be turned off.
+8. **Status.** Whether Wi-Fi is up, the weather check, and how much memory is free for a download. This page cannot be turned off.
 
 Big counts are shortened (1.2k, 12.5k, 1.25M). A page that is on but has nothing saved shows its empty message instead of disappearing.
 

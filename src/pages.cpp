@@ -104,10 +104,18 @@ void drawFinishSetup(TFT_eSPI& tft) {
   tft.drawString("Add your name, ZIP code and WeatherAPI key", tft.width() / 2, tft.height() - 10, 2);
 }
 
+String StatusPage::weatherLine() const {
+  if (settings_.placeLabel.length()) return "Found: " + settings_.placeLabel;
+  if (placeError_.length()) return placeError_;
+  return "checking...";
+}
+
 void StatusPage::draw(TFT_eSPI& tft) {
   // update() calls draw() directly, skipping the page manager's font reset.
   fonts::use(tft, fonts::Id::BuiltIn);
   shownConnected_ = WiFi.status() == WL_CONNECTED;
+  shownWeather_ = weatherLine();
+  shownBlock_ = ESP.getMaxAllocHeap();
   if (shownConnected_ && !settings_.isComplete()) {
     drawFinishSetup(tft);
     return;
@@ -119,14 +127,13 @@ void StatusPage::draw(TFT_eSPI& tft) {
   tft.drawString("Settings check", 12, 12, 4);
 
   const int labelX = 12, valueX = 104, valueWidth = tft.width() - valueX - 8;
-  int y = 44;
+  int y = 56;
   auto row = [&](const char* label, const String& value, uint16_t colour) {
     tft.setTextColor(theme::MUTED, theme::BG);
     tft.drawString(label, labelX, y, 2);
     tft.setTextColor(colour, theme::BG);
-    tft.drawString(fitText(tft, value.length() ? value : String("(not set)"), valueWidth, 2),
-                   valueX, y, 2);
-    y += 20;
+    tft.drawString(fitText(tft, value, valueWidth, 2), valueX, y, 2);
+    y += 28;
   };
 
   if (shownConnected_) {
@@ -134,47 +141,27 @@ void StatusPage::draw(TFT_eSPI& tft) {
   } else {
     row("Wi-Fi", "connecting...", theme::PINK);
   }
-  row("Name", settings_.name, theme::TEXT);
-  row("ZIP", settings_.zip, theme::TEXT);
-  row("API key", settings_.weatherKey.length() ? "saved" : "", theme::TEXT);
-  if (settings_.placeLabel.length()) {
-    row("Weather", "Found: " + settings_.placeLabel, theme::accent());
-  } else if (placeError_.length()) {
-    row("Weather", placeError_, theme::PINK);
-  } else {
-    row("Weather", "checking...", theme::MUTED);
-  }
-  row("Units", String(settings_.fahrenheit ? "Fahrenheit" : "Celsius") +
-                   (settings_.clock24h ? ", 24-hour clock" : ", 12-hour clock"), theme::TEXT);
-  row("Badge", settings_.wdgKey.length() ? "WDGWars stats" : "",
-      settings_.wdgKey.length() ? theme::accent() : theme::TEXT);
-  const bool wigleSaved = settings_.wigleName.length() && settings_.wigleToken.length();
-  row("WiGLE", wigleSaved ? "stats" : "", wigleSaved ? theme::accent() : theme::TEXT);
-  const bool wardriftSaved = settings_.wardriftUser.length() && settings_.wardriftPass.length();
-  row("Wardrift", wardriftSaved ? "stats" : "", wardriftSaved ? theme::accent() : theme::TEXT);
-  row("GitHub", settings_.githubRepos.length() ? "stars" : "",
-      settings_.githubRepos.length() ? theme::accent() : theme::TEXT);
-  const char* animal = "None";
-  if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Fox)) animal = "Fox";
-  else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Raccoon)) animal = "Raccoon";
-  else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Owl)) animal = "Owl";
-  else if (settings_.petAnimal == static_cast<uint8_t>(PetAnimal::Bear)) animal = "Bear";
-  const char* mode = "Off";
-  if (settings_.petMode == static_cast<uint8_t>(PetMode::Idle)) mode = "Idle";
-  else if (settings_.petMode == static_cast<uint8_t>(PetMode::Reacts)) mode = "Reacts";
-  row("Pet", String(animal) + ", " + mode, theme::TEXT);
+  const bool weatherOk = settings_.placeLabel.length() > 0;
+  row("Weather", shownWeather_, weatherOk ? theme::accent() : placeError_.length() ? theme::PINK : theme::MUTED);
+
+  // The largest free block. An HTTPS download needs about 40 KB of it.
+  const bool low = shownBlock_ < 40 * 1024;
+  row("Memory", String(shownBlock_ / 1024) + " KB", low ? theme::PINK : theme::accent());
 
   tft.setTextColor(theme::MUTED, theme::BG);
   tft.setTextDatum(BC_DATUM);
   const String hint = shownConnected_
       ? String("settings: ") + settings_web::HOSTNAME + ".local   hold 5 s: Wi-Fi"
       : String("hold 5 s: Wi-Fi setup");
-  tft.drawString(hint, tft.width() / 2, tft.height() - 12, 2);
+  tft.drawString(hint, tft.width() / 2, tft.height() - 10, 2);
 }
 
 void StatusPage::update(TFT_eSPI& tft) {
   const bool connected = WiFi.status() == WL_CONNECTED;
-  if (connected != shownConnected_) draw(tft);
+  const uint32_t block = ESP.getMaxAllocHeap();
+  const uint32_t gap = block > shownBlock_ ? block - shownBlock_ : shownBlock_ - block;
+  const bool memoryMoved = gap >= 8 * 1024 || (block < 40 * 1024) != (shownBlock_ < 40 * 1024);
+  if (connected != shownConnected_ || memoryMoved || weatherLine() != shownWeather_) draw(tft);
 }
 
 // ---- PlaceholderPage -------------------------------------------------------
