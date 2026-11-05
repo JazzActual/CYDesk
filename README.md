@@ -1,8 +1,8 @@
 # CYDesk
 
-A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and optionally a WDGWars account. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
+A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and a few optional accounts. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
 
-Work in progress. The 2.8" board is the one this was built on.
+The 2.8" board is the one this was built and tested on.
 
 ## Put it on a board
 
@@ -19,27 +19,57 @@ Installing the wrong size will not damage the board. The picture will look wrong
 
 ## First boot
 
-If the board has no Wi-Fi saved, it opens a network called `DeskBuddy-Setup`. Join that from a phone or computer and pick your own network. It has to be **2.4 GHz**.
+If the board has no Wi-Fi saved, it opens a network called `DeskBuddy-Setup`. Join that from a phone or computer and pick your own network. It has to be **2.4 GHz**. The portal only asks for the network. Everything else is on the settings page, because a phone closes that mini-browser as soon as you switch apps.
 
-When it is on your Wi-Fi, the screen shows a QR code until setup is finished. The code opens the settings page on the board (also at `http://cydesk.local`, or the IP address printed on the screen). Add:
+When it is on your Wi-Fi, the screen shows a QR code until setup is finished. The code opens the settings page on the board (also at `http://cydesk.local`, or the IP address printed on the screen). The QR code uses the IP address, because `.local` names can take a few seconds to look up.
+
+Add at least:
 
 - the name used in the greeting
 - a ZIP code
 - a free [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) key
-- an optional WDGWars key, if you want that account's stats
 
-Those stay on the board. They are not in this repo, and the weather and WDGWars keys are not sent back to the settings page after you save them.
+The rest of the settings page is optional. Password boxes start empty after a key is saved. Leave one blank to keep what is already stored.
+
+Those stay on the board. They are not in this repo, and the keys and passwords are not printed in the serial log.
 
 Two boards on the same Wi-Fi both answer to `cydesk.local`. The QR code uses the IP address, which still works.
 
+Hold a finger on the screen for about five seconds any time you want to change the Wi-Fi network. A dropped link does not open the portal by itself. On a mesh, the board looks for any node of the saved network name, not only the first radio it joined.
+
 ## Pages
 
-Tap anywhere to go to the next one.
+Tap anywhere to go to the next one. It wraps around. On the settings page, uncheck a screen to skip it. Status always stays in the cycle. If every other box is cleared, Home stays on.
 
-1. **Home.** Greeting, date, clock, sunrise and sunset, temperature, the chance of rain, humidity, and a desk pet (fox, raccoon, or owl). The pet can sleep at night, hold an umbrella when rain is likely, or wear sunglasses when it is clear.
-2. **Hourly.** The next 12 hours. Weather data is from WeatherAPI.com.
-3. **Badge.** WDGWars stats when a key is saved. Otherwise it asks for one.
-4. **Status.** Wi-Fi, whether the keys are saved, and the result of the weather check.
+1. **Home.** Greeting, date, and clock. The greeting follows the hour: morning, afternoon, evening, or "Up late". Sunrise and sunset sit above the weather, in time order, with the next one bright and the one that already passed muted. Temperature, the chance of rain, humidity, and a weather icon. By day the sun is drawn for clear and partly cloudy. At night every icon uses the moon phase from the forecast. The desk pet sits in the bottom-left corner.
+2. **Hourly.** The next 12 hours as tiles: hour, icon, temperature, and chance of rain. The current hour uses the accent color. "Weather by WeatherAPI.com" sits along the bottom.
+3. **Badge.** One [WDGWars](https://wdgwars.pl/) account: name, gang, badge count, total, Wi-Fi, BLE, aircraft, mesh, and today plus the last 7 days. Asks for a key when none is saved. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
+4. **WiGLE.** Rank, month rank, and discovery counts (Wi-Fi, cell, Bluetooth, and this month) from a read-only [WiGLE](https://wigle.net/) stats request. The API name and token are saved on the board. One successful check per day, at a time you pick (default 4:00). If the desk is off then, it checks the next time it is on. The last numbers stay up until the next check.
+5. **Wardrift.** One [wardrift.net](https://wardrift.net/) character: name, faction, level, class, networks, routes, threats, and a streak when there is one. The upload API key cannot read the dashboard, so the desk signs in with the username and password. Read-only. Refreshes about every 15 minutes. A failed check keeps the last numbers and marks them stale.
+6. **Stars.** The first public GitHub repo in the list, as a big star count, with the repo address along the bottom. A thin line of one point per day appears once two local days have been saved (up to about three weeks). No token. Public repos only, written as `owner/repo`.
+7. **Repos.** The same repos as a list, name and count, once a second repo is saved. With only one, this page says to add another. Up to four repos. One request at a time, about every 15 minutes. A failed check keeps the last count.
+8. **Status.** Whether Wi-Fi is up, whether the keys are saved, and the result of the weather check. This page cannot be turned off.
+
+Big counts are shortened (1.2k, 12.5k, 1.25M). A page that is on but has nothing saved shows its empty message instead of disappearing.
+
+## Desk pet
+
+A small pixel animal in the corner of Home: fox, raccoon, owl, or bear, or none. Off, idle, or reacting. Reactions, in order: asleep at night, an umbrella when rain or snow is likely, sunglasses when it is clear, otherwise a blink or a small wiggle. The default, before you open settings, is a fox that reacts.
+
+## Settings page
+
+Served by the board at `http://cydesk.local` once it is on your Wi-Fi.
+
+- Accent color. Default cyan. It replaces the highlights on the desk and on this page as you move the picker. Pink stays for errors, the umbrella, and the sunset arrow.
+- Which screens a tap visits.
+- Name, ZIP code, and WeatherAPI key. °F or °C. 12-hour or 24-hour clock. The clock's offset comes from the weather location, including daylight saving.
+- WDGWars key.
+- WiGLE API name, token, and the time of day to check.
+- Wardrift username and password.
+- Up to four public GitHub repos, one per line.
+- Desk pet mode and animal.
+
+Weather refreshes about every 15 minutes and covers the current conditions, sunrise and sunset, and the hourly page in one request.
 
 ## Boards
 
@@ -48,7 +78,7 @@ Tap anywhere to go to the next one.
 | 2.8" | E32R28T / ESP32-2432S028 | 240×320, ILI9341 | 2.8 inch |
 | 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796 | 3.5 inch |
 
-The 3.5" build has not been tried on that hardware yet. The capacitive 3.5" (the model ending in **C**) and the 4" boards are not supported.
+The 3.5" build has not been tried on that hardware yet. The layout keeps the 2.8" positions and drops the extra height toward the middle. The capacitive 3.5" (the model ending in **C**) and the 4" boards are not supported.
 
 ## Build from source
 
