@@ -13,4 +13,5 @@ __pycache__/
 
 # Private notes and working files (not for the public repo)
 CLAUDE.local.md
+PLAN.md
 local/
