@@ -153,9 +153,9 @@ void setup() {
   ledsOff();
   Serial.begin(115200);
 #if defined(BOARD_CYD35)
-  Serial.println("\nCYDesk: 3.5 inch");
+  Serial.println("\nCYDesk 3.5: 3.5 inch resistive");
 #else
-  Serial.println("\nCYDesk: 2.8 inch");
+  Serial.println("\nCYDesk 3.5: 2.8 inch");
 #endif
 
   tft.init();

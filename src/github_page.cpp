@@ -5,6 +5,7 @@
 #include "count_text.h"
 #include "fonts.h"
 #include "github_service.h"
+#include "layout.h"
 #include "theme.h"
 
 namespace {
@@ -50,7 +51,7 @@ uint16_t softAccent() {
 }
 
 // A thin line of one point per day. Hidden until two days are saved.
-void drawTrend(TFT_eSPI& tft, int repoIndex, int dy) {
+void drawTrend(TFT_eSPI& tft, int repoIndex, int top) {
   const int n = github::historyCount(repoIndex);
   if (n < 2) return;
   int32_t lo = github::historyStars(repoIndex, 0);
@@ -61,10 +62,9 @@ void drawTrend(TFT_eSPI& tft, int repoIndex, int dy) {
     if (value > hi) hi = value;
   }
 
-  const int width = 200;
+  const int width = layout::wide(tft) ? 280 : 200;
   const int height = 26;
   const int left = (tft.width() - width) / 2;
-  const int top = 160 + dy;
   const uint16_t color = softAccent();
   int lastX = left;
   int lastY = top + height / 2;
@@ -81,7 +81,7 @@ void drawTrend(TFT_eSPI& tft, int repoIndex, int dy) {
 }
 
 void drawOne(TFT_eSPI& tft, const github::Repo& repo) {
-  const int dy = tft.height() <= 240 ? 0 : (tft.height() - 240) / 2;
+  const layout::HeroStats L = layout::heroStats(tft.height());
   if (repo.missing) {
     centerMessage(tft, "Repo not found", repo.slug.c_str(), theme::PINK);
     return;
@@ -100,23 +100,23 @@ void drawOne(TFT_eSPI& tft, const github::Repo& repo) {
   fonts::use(tft, fonts::Id::Medium);
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::accent(), theme::BG);
-  tft.drawString(fitWidth(tft, repoName(repo.slug), tft.width() - 2 * MARGIN), MARGIN, 12);
+  tft.drawString(fitWidth(tft, repoName(repo.slug), tft.width() - 2 * MARGIN), MARGIN, L.nameY);
 
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextColor(theme::MUTED, theme::BG);
   String sub = ownerName(repo.slug);
   if (repo.stale) sub += sub.length() ? "  -  stale" : "stale";
-  tft.drawString(sub, MARGIN, 40);
+  tft.drawString(sub, MARGIN, L.subY);
 
   fonts::use(tft, fonts::Id::Clock);
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(theme::TEXT, theme::BG);
-  tft.drawString(compactCount(repo.stars), tft.width() / 2, 104 + dy);
+  tft.drawString(compactCount(repo.stars), tft.width() / 2, L.heroY);
   fonts::use(tft, fonts::Id::Tiny);
   tft.setTextDatum(TC_DATUM);
   tft.setTextColor(theme::MUTED, theme::BG);
-  tft.drawString("stars", tft.width() / 2, 134 + dy);
-  drawTrend(tft, 0, dy);
+  tft.drawString("stars", tft.width() / 2, L.heroLabelY);
+  drawTrend(tft, 0, L.trendY);
 
   const String url = "https://github.com/" + repo.slug;
   tft.setTextDatum(BC_DATUM);

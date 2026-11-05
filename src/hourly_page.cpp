@@ -4,6 +4,7 @@
 #include <WiFi.h>
 
 #include "fonts.h"
+#include "layout.h"
 #include "theme.h"
 #include "timekeeping.h"
 #include "weather_icons.h"
@@ -13,7 +14,6 @@ namespace {
 constexpr int COLS = 6;
 constexpr int TILES = 12;
 constexpr int CREDIT_H = 18;  // room for the WeatherAPI credit along the bottom
-constexpr int ICON = 40;
 
 // First forecast hour that hasn't ended. The report starts at the current
 // hour, but a fetch can be up to 15 minutes old, so skip any hour that is over.
@@ -97,11 +97,18 @@ void HourlyPage::draw(TFT_eSPI& tft) {
     return;
   }
 
+  const int icon = layout::hourlyIcon(tft);
   const int colW = tft.width() / COLS;
   const int gridX = (tft.width() - colW * COLS) / 2;
   const int rowH = (tft.height() - CREDIT_H) / 2;
   const time_t now = time(nullptr);
   const float phase = (w.ok && !isnan(w.moonPhase)) ? w.moonPhase : 0.5f;
+  // Vertical positions inside a tile scale with row height so 3.5" tiles
+  // don't leave a dead band under the precip %.
+  const int labelY = 4;
+  const int iconY = rowH * 22 / 111;
+  const int tempY = rowH * 64 / 111;
+  const int precipY = rowH * 82 / 111;
 
   for (int i = 0; i < count; i++) {
     const HourForecast& hour = w.hours[start + i];
@@ -116,22 +123,22 @@ void HourlyPage::draw(TFT_eSPI& tft) {
     fonts::use(tft, fonts::Id::Small);
     tft.setTextDatum(TC_DATUM);
     tft.setTextColor(current ? theme::accent() : theme::TEXT, theme::BG);
-    tft.drawString(label, cx, top + 4);
+    tft.drawString(label, cx, top + labelY);
 
-    drawWeatherIcon(tft, cx - ICON / 2, top + 22, iconForCode(hour.conditionCode), !hour.isDay,
-                    phase, ICON);
+    drawWeatherIcon(tft, cx - icon / 2, top + iconY, iconForCode(hour.conditionCode), !hour.isDay,
+                    phase, icon);
 
     const float temp = settings_.fahrenheit ? hour.tempF : hour.tempC;
     char tempText[8];
     snprintf(tempText, sizeof(tempText), "%d°", (int)lroundf(temp));
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(tempText, cx, top + 64);
+    tft.drawString(tempText, cx, top + tempY);
 
     char precip[8];
     snprintf(precip, sizeof(precip), "%d%%", hour.precipChance);
     fonts::use(tft, fonts::Id::Tiny);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(precip, cx, top + 82);
+    tft.drawString(precip, cx, top + precipY);
   }
 
   fonts::use(tft, fonts::Id::Tiny);
