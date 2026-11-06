@@ -41,6 +41,8 @@ def stage_flasher(source, target, env):
         folder, name = "cyd40", "CYDesk 4.0 R"
     elif pioenv == "cyd35":
         folder, name = "cyd35", "CYDesk 3.5"
+    elif pioenv == "nicemcu28":
+        folder, name = "nicemcu28", "CYDesk 2.8 C"
     else:
         folder, name = "cyd28", "CYDesk 2.8"
     out_dir = project / "flasher" / folder

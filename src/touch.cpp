@@ -1,7 +1,10 @@
 #include "touch.h"
 
 #include <TFT_eSPI.h>
-#if !defined(BOARD_CYD35) && !defined(BOARD_CYD40)
+#if defined(BOARD_NICEMCU28)
+#include <Wire.h>
+#include "pins.h"
+#elif !defined(BOARD_CYD35) && !defined(BOARD_CYD40)
 #include <SPI.h>
 #include <XPT2046_Touchscreen.h>
 #include "pins.h"
@@ -14,8 +17,43 @@ constexpr uint32_t MIN_TAP_MS = 20;           // shorter than this = electrical 
 // Pressure above this counts as a finger. The display library uses the same
 // number. A light tap on a resistive screen can sit lower; the log prints it.
 constexpr uint16_t PRESS_Z = 600;
+#elif defined(BOARD_NICEMCU28)
+// CST816D gesture/point register block (NiceMCU nicemcu_display.cpp).
+constexpr uint8_t CST816_REG_DATA = 0x02;
+bool touchReady_ = false;
+uint16_t lastRawX_ = 0;
+uint16_t lastRawY_ = 0;
+bool lastPressed_ = false;
+
+bool readCst816(uint8_t* packet, size_t length) {
+  Wire.beginTransmission(TOUCH_I2C_ADDR);
+  Wire.write(CST816_REG_DATA);
+  if (Wire.endTransmission(false) != 0) return false;
+  const size_t got = Wire.requestFrom(TOUCH_I2C_ADDR, static_cast<uint8_t>(length));
+  if (got != length) {
+    while (Wire.available() > 0) Wire.read();
+    return false;
+  }
+  for (size_t i = 0; i < length; i++) {
+    packet[i] = static_cast<uint8_t>(Wire.read());
+  }
+  return true;
+}
+
+// Returns true while a finger is down. Fills raw portrait coordinates when
+// pressed (panel native 240×320).
+bool cst816Pressed(uint16_t* rawX, uint16_t* rawY) {
+  if (!touchReady_) return false;
+  uint8_t packet[5] = {};
+  if (!readCst816(packet, sizeof(packet))) return false;
+  if (packet[0] == 0) return false;
+  *rawX = static_cast<uint16_t>(((packet[1] & 0x0F) << 8) | packet[2]);
+  *rawY = static_cast<uint16_t>(((packet[3] & 0x0F) << 8) | packet[4]);
+  return true;
+}
 #else
-// The 2.8" touch chip has its own SPI bus (VSPI), separate from the display.
+// The 2.8" resistive touch chip has its own SPI bus (VSPI), separate from the
+// display.
 SPIClass touchSpi(VSPI);
 XPT2046_Touchscreen touchChip(PIN_TOUCH_CS, PIN_TOUCH_IRQ);
 #endif
@@ -30,11 +68,38 @@ int16_t mapAxis(int32_t raw, int32_t lo, int32_t hi, int16_t outMax) {
   if (v > outMax) v = outMax;
   return static_cast<int16_t>(v);
 }
+
+int16_t clampAxis(int32_t v, int16_t outMax) {
+  if (v < 0) v = 0;
+  if (v > outMax) v = outMax;
+  return static_cast<int16_t>(v);
+}
 }  // namespace
 
 void TouchInput::begin(TFT_eSPI& display) {
   display_ = &display;
-#if !defined(BOARD_CYD35) && !defined(BOARD_CYD40)
+#if defined(BOARD_NICEMCU28)
+  // Shared panel/touch reset already pulsed by tft.init() (TFT_RST=2).
+  pinMode(PIN_TOUCH_IRQ, INPUT);
+  touchReady_ = Wire.begin(PIN_TOUCH_SDA, PIN_TOUCH_SCL, 400000);
+  if (!touchReady_) {
+    Serial.println("[touch] CST816D I2C bus failed to start");
+  } else {
+    // Register 0xA7 is the CST816 family chip id.
+    Wire.beginTransmission(TOUCH_I2C_ADDR);
+    Wire.write(0xA7);
+    const uint8_t addrOk = Wire.endTransmission(false);
+    const size_t got = (addrOk == 0) ? Wire.requestFrom(TOUCH_I2C_ADDR, (uint8_t)1) : 0;
+    if (got == 1) {
+      const uint8_t chipId = static_cast<uint8_t>(Wire.read());
+      Serial.printf("[touch] CST816D present id=0x%02X (NiceMCU 2.8 C)\n", chipId);
+    } else {
+      Serial.printf("[touch] CST816D no ACK at 0x%02X (bus up, chip silent)\n",
+                    TOUCH_I2C_ADDR);
+      touchReady_ = false;
+    }
+  }
+#elif !defined(BOARD_CYD35) && !defined(BOARD_CYD40)
   touchSpi.begin(PIN_TOUCH_SCK, PIN_TOUCH_MISO, PIN_TOUCH_MOSI, PIN_TOUCH_CS);
   touchChip.begin(touchSpi);
   touchChip.setRotation(1);  // match the display's landscape rotation
@@ -46,7 +111,16 @@ void TouchInput::begin(TFT_eSPI& display) {
 }
 
 bool TouchInput::screenPressed() {
-#if defined(BOARD_CYD35) || defined(BOARD_CYD40)
+#if defined(BOARD_NICEMCU28)
+  uint16_t x = 0, y = 0;
+  const bool down = cst816Pressed(&x, &y);
+  if (down) {
+    lastRawX_ = x;
+    lastRawY_ = y;
+  }
+  lastPressed_ = down;
+  return down;
+#elif defined(BOARD_CYD35) || defined(BOARD_CYD40)
   return display_->getTouchRawZ() > PRESS_Z;
 #else
   return touchChip.touched();
@@ -60,7 +134,22 @@ void TouchInput::capturePoint() {
   }
   const int16_t w = display_->width();
   const int16_t h = display_->height();
-#if defined(BOARD_CYD35) || defined(BOARD_CYD40)
+#if defined(BOARD_NICEMCU28)
+  // CST816D reports portrait panel pixels (240×320). Display rotation 1 is
+  // landscape 320×240: x = raw_y, y = (panel_w - 1) - raw_x.
+  uint16_t rawX = lastRawX_;
+  uint16_t rawY = lastRawY_;
+  if (!lastPressed_) {
+    if (!cst816Pressed(&rawX, &rawY)) {
+      havePoint_ = false;
+      return;
+    }
+  }
+  // Panel native width is TFT_WIDTH (240); landscape height is that axis.
+  pointX_ = clampAxis(rawY, w - 1);
+  pointY_ = clampAxis(static_cast<int32_t>(TFT_WIDTH) - 1 - rawX, h - 1);
+  Serial.printf("[touch] press raw=%u,%u -> %d,%d (cap)\n", rawX, rawY, pointX_, pointY_);
+#elif defined(BOARD_CYD35) || defined(BOARD_CYD40)
   uint16_t rawX = 0, rawY = 0;
   display_->getTouchRaw(&rawX, &rawY);
   // Shared-SPI panels report portrait-oriented raw axes; swap into landscape.
