@@ -184,12 +184,7 @@ void setup() {
   prepareWifi();
 
   if (!hasSavedWifi()) {
-    // SoftAP/portal held off until explicitly re-enabled. Keep the radio quiet
-    // so a first-boot desk does not broadcast CYDesk and knock nearby devices
-    // off their home channel.
-    WiFi.mode(WIFI_OFF);
-    Serial.println("[wifi] no saved network; SoftAP/portal disabled (radio off)");
-    pages.redraw();
+    openWifiSetup("Wi-Fi setup");
   } else {
     // Connect with the saved network in the background; the status page
     // updates itself once it's connected. Any mesh node with that name is fine.
@@ -216,8 +211,7 @@ void loop() {
       break;
     }
     case TouchEvent::LongPress:
-      // SoftAP/portal held off until explicitly re-enabled.
-      Serial.println("[wifi] long-press setup ignored (SoftAP/portal disabled)");
+      openWifiSetup("Wi-Fi setup");
       break;
     case TouchEvent::None:
       break;
