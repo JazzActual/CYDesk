@@ -1,0 +1,17 @@
+{
+  "name": "CYDesk 4.0 R",
+  "version": "2026-11-06",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 0,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
