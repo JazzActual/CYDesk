@@ -9,7 +9,7 @@
 
 A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and a few optional accounts. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
 
-CYDesk supports the 2.8" resistive Cheap Yellow Display, the NiceMCU 2.8" capacitive board (ST7789 + CST816D), and the 3.5" / 4.0" resistive Cheap Yellow Displays. The 2.8" resistive board is the one that has been lived with day to day. The NiceMCU 2.8" C build keeps the same 320×240 landscape layout with capacitive touch. The 3.5" and 4.0" builds use the same pages and settings on a 480×320 landscape panel; icons bump a little more on the 4" glass. Other capacitive CYD panels (ending in **C**), the no-touch E32N40T, and the Guition 480×480 ESP32-S3 (4848S040) are not supported.
+CYDesk supports the 2.8" resistive Cheap Yellow Display, the NiceMCU 2.8" capacitive board (ST7789 + CST816D), the 3.5" / 4.0" resistive Cheap Yellow Displays, and the 3.5" / 4.0" capacitive GT911 variants on classic ESP32 (ST7796). The 2.8" resistive board is the one that has been lived with day to day. Capacitive 2.8" C keeps the same 320×240 landscape layout. The taller boards use the same pages and settings on a 480×320 landscape panel; icons bump a little more on the 4" glass. The no-touch E32N40T and the Guition 480×480 ESP32-S3 (4848S040) are not supported.
 
 ## Put it on a board
 
@@ -31,7 +31,7 @@ Three ways to get a new build onto a board that already runs CYDesk. Prefer the 
 ### Prerequisites
 
 - The desk must already be on a recent CYDesk image with **two OTA app slots** (`min_spiffs` partition table). Older “huge app / no OTA” builds need **one USB Install or update first** (Erase **unchecked**) so the partition table migrates. After that, in-app and espota work.
-- Pick the **matching board** (2.8 R / 2.8 C NiceMCU / 3.5 R / 4.0 R). Wrong choice will not brick the board; the picture or touch will look wrong until you flash the right one.
+- Pick the **matching board** (2.8 R / 2.8 C / 3.5 R / 3.5 C / 4.0 R / 4.0 C). Wrong choice will not brick the board; the picture or touch will look wrong until you flash the right one.
 - Settings and status live at **http://cydesk.local** once the desk is on your 2.4 GHz Wi‑Fi (or use the IP shown on Status / the setup QR). Two boards on the same LAN both answer `cydesk.local` — use the IP if that happens.
 
 ### 1. Web flasher over USB
@@ -56,7 +56,9 @@ The board fetches its variant from the published channel on GitHub Pages (same s
 - 2.8″ R — `https://jazzactual.github.io/CYDesk/cyd28/channel.json` → `app.bin`
 - 2.8″ C (NiceMCU) — `…/nicemcu28/channel.json`
 - 3.5″ R — `…/cyd35/channel.json`
+- 3.5″ C — `…/cyd35c/channel.json`
 - 4.0″ R — `…/cyd40/channel.json`
+- 4.0″ C — `…/cyd40c/channel.json`
 
 Status shows the build id and whether an update is ready. If Check fails (offline channel, wrong board in the JSON, no Wi‑Fi), use USB or espota below.
 
@@ -68,13 +70,13 @@ From a machine that can build the project, push over the network. Password is **
 pio run -e e32r28t -t upload --upload-protocol espota --upload-port cydesk.local --upload-flags --auth=cydesk
 ```
 
-Use `-e nicemcu28`, `-e cyd35`, or `-e cyd40` for those boards. If `cydesk.local` does not resolve, pass the desk’s IP as `--upload-port` instead.
+Use `-e nicemcu28`, `-e cyd35`, `-e cyd35c`, `-e cyd40`, or `-e cyd40c` for those boards. If `cydesk.local` does not resolve, pass the desk’s IP as `--upload-port` instead.
 
 ### Caveats
 
 - In-app Check needs the channel live on Pages (published when `flasher/` lands on `main`).
 - TLS for weather and the update channel uses the same relaxed HTTPS trust as the rest of CYDesk; treat updates like any other LAN/settings access.
-- Other capacitive CYD panels, E32N40T, and Guition 4848S040 are not supported builds.
+- E32N40T and Guition 4848S040 (ESP32-S3) are not supported builds.
 
 ## Pages
 
@@ -161,10 +163,12 @@ Weather refreshes about every 15 minutes and covers the current conditions, sunr
 | --- | --- | --- | --- |
 | 2.8" resistive | E32R28T / ESP32-2432S028 | 240×320, ILI9341, XPT2046 | 2.8 inch R |
 | 2.8" capacitive | NiceMCU-32S-DEV_2.8IPS | 240×320, ST7789, CST816D | 2.8 inch C |
-| 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796 | 3.5 inch R |
-| 4.0" resistive | E32R40T / ESP32-32E | 320×480, ST7796 | 4.0 inch R |
+| 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796, XPT2046 | 3.5 inch R |
+| 3.5" capacitive | ESP32-3248S035**C** | 320×480, ST7796, GT911 | 3.5 inch C |
+| 4.0" resistive | E32R40T / ESP32-32E | 320×480, ST7796, XPT2046 | 4.0 inch R |
+| 4.0" capacitive | classic ESP32 ST7796 + GT911 | 320×480, ST7796, GT911 | 4.0 inch C |
 
-On the taller boards, Home still anchors weather to the bottom-right (so the 2.8" clock block stays where it was approved), and the hero-stat pages (Badge, WiGLE, Wardrift, Stars) stretch their mid band instead of sliding a fixed 240 px strip down. Hourly tiles and the setup QR grow with the taller screen. The 4.0" R panel is the same pixel count as the 3.5" R; icons and the QR are a step larger for the bigger glass. The NiceMCU 2.8" C board matches the resistive 2.8" pixel layout; pick **2.8 inch C** in the installer, not the resistive 2.8" R entry. If colours look swapped or touch feels dead after flashing 3.5" or 4.0", say so — those are the board quirks that still need a real panel to confirm.
+On the taller boards, Home still anchors weather to the bottom-right (so the 2.8" clock block stays where it was approved), and the hero-stat pages (Badge, WiGLE, Wardrift, Stars) stretch their mid band instead of sliding a fixed 240 px strip down. Hourly tiles and the setup QR grow with the taller screen. The 4.0" panels share the 3.5" pixel count; icons and the QR are a step larger for the bigger glass. Pick **R** vs **C** carefully — resistive and capacitive use different touch chips. Guition 4848S040 (ESP32-S3) is not these builds. If colours look swapped or touch feels dead on a new panel, say so.
 
 ## Build from source
 
@@ -179,7 +183,9 @@ Other boards are separate builds. Only use these when that board is the one plug
 ```
 pio run -e nicemcu28 -t upload
 pio run -e cyd35 -t upload
+pio run -e cyd35c -t upload
 pio run -e cyd40 -t upload
+pio run -e cyd40c -t upload
 ```
 
-`pio run`, `pio run -e nicemcu28`, `pio run -e cyd35`, and `pio run -e cyd40` also refresh the files the installer page serves. Pushing `main` publishes them.
+`pio run` and the matching `-e` builds also refresh the files the installer page serves. Pushing `main` publishes them.

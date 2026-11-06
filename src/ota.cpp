@@ -30,8 +30,12 @@ String remoteName;
 String remoteAppUrl;
 int remoteSize = 0;
 
-#if defined(BOARD_CYD40)
+#if defined(BOARD_CYD40C)
+constexpr const char* BOARD_ID = "cyd40c";
+#elif defined(BOARD_CYD40)
 constexpr const char* BOARD_ID = "cyd40";
+#elif defined(BOARD_CYD35C)
+constexpr const char* BOARD_ID = "cyd35c";
 #elif defined(BOARD_CYD35)
 constexpr const char* BOARD_ID = "cyd35";
 #elif defined(BOARD_NICEMCU28)

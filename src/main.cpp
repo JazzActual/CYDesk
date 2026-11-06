@@ -155,8 +155,12 @@ void updateHoldBar() {
 void setup() {
   ledsOff();
   Serial.begin(115200);
-#if defined(BOARD_CYD40)
+#if defined(BOARD_CYD40C)
+  Serial.println("\nCYDesk: 4.0 inch capacitive (ST7796 + GT911)");
+#elif defined(BOARD_CYD40)
   Serial.println("\nCYDesk: 4.0 inch resistive (E32R40T)");
+#elif defined(BOARD_CYD35C)
+  Serial.println("\nCYDesk: 3.5 inch capacitive (ESP32-3248S035C)");
 #elif defined(BOARD_CYD35)
   Serial.println("\nCYDesk: 3.5 inch resistive");
 #elif defined(BOARD_NICEMCU28)

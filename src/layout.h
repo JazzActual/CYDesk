@@ -21,7 +21,7 @@ constexpr int BASE_W = 320;
 inline bool tall(TFT_eSPI& tft) { return tft.height() > BASE_H; }
 inline bool wide(TFT_eSPI& tft) { return tft.width() > BASE_W; }
 
-#if defined(BOARD_CYD40)
+#if defined(BOARD_CYD40) || defined(BOARD_CYD40C)
 constexpr bool kFourInch = true;
 #else
 constexpr bool kFourInch = false;
