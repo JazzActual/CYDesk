@@ -259,8 +259,8 @@ void handleRoot() {
             "<select id='hstrip" + String(i) + "' name='hstrip" + String(i) + "' data-current='" +
             String(s.homeStripField[i]) + "'></select>";
   }
-  html += "</div><div class='hint'>Three numbers from one account, top-right on Home. "
-          "A tap on the strip opens that account's page.</div>";
+  html += "</div><div class='hint'>Off by default. Pick one account to show three of its "
+          "numbers top-right on Home. A tap on the strip opens that account's page.</div>";
   // Field lists for the script: { "1": [["0","Total"], ...], "2": [...], ... }
   html += "<script>window.CYDESK_STRIP_FIELDS={";
   for (uint8_t src = 1; src <= static_cast<uint8_t>(HomeStripSource::Wardrift); src++) {
@@ -527,9 +527,15 @@ void handleSave() {
   }
   if ((screens & ~(1u << ScreenStatus)) == 0) screens |= 1u << ScreenHome;
   s.screens = screens;
-  s.homeStripSource = static_cast<uint8_t>(server.arg("hstripsrc").toInt());
+  // Missing radio (should not happen) stays Off — never invent a source.
+  if (server.hasArg("hstripsrc")) {
+    s.homeStripSource = static_cast<uint8_t>(server.arg("hstripsrc").toInt());
+  } else {
+    s.homeStripSource = static_cast<uint8_t>(HomeStripSource::Off);
+  }
   for (int i = 0; i < home_strip::LINES; i++) {
-    s.homeStripField[i] = static_cast<uint8_t>(server.arg("hstrip" + String(i)).toInt());
+    const String key = "hstrip" + String(i);
+    s.homeStripField[i] = server.hasArg(key) ? static_cast<uint8_t>(server.arg(key).toInt()) : 0;
   }
   home_strip::clamp(s);
   theme::setAccent(s.accent);

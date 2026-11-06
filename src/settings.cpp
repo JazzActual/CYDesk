@@ -39,12 +39,19 @@ void Settings::load() {
   if (screens == 0x7F) screens = SCREENS_ALL;
   screens |= 1u << ScreenStatus;
   if ((screens & ~(1u << ScreenStatus)) == 0) screens |= 1u << ScreenHome;
-  // Packed: source in low byte, then the three field picks.
-  const uint32_t strip = prefs.isKey("hstrip") ? prefs.getUInt("hstrip", 0) : 0;
-  homeStripSource = static_cast<uint8_t>(strip & 0xFFu);
-  homeStripField[0] = static_cast<uint8_t>((strip >> 8) & 0xFFu);
-  homeStripField[1] = static_cast<uint8_t>((strip >> 16) & 0xFFu);
-  homeStripField[2] = static_cast<uint8_t>((strip >> 24) & 0xFFu);
+  // Home strip pack (source + three fields). No key yet = never configured =
+  // stay Off so fresh installs and upgraded desks without a choice show no
+  // strip. A saved pack keeps the user's source (including an explicit Off).
+  if (prefs.isKey("hstrip")) {
+    const uint32_t strip = prefs.getUInt("hstrip", 0);
+    homeStripSource = static_cast<uint8_t>(strip & 0xFFu);
+    homeStripField[0] = static_cast<uint8_t>((strip >> 8) & 0xFFu);
+    homeStripField[1] = static_cast<uint8_t>((strip >> 16) & 0xFFu);
+    homeStripField[2] = static_cast<uint8_t>((strip >> 24) & 0xFFu);
+  } else {
+    homeStripSource = static_cast<uint8_t>(HomeStripSource::Off);
+    homeStripField[0] = homeStripField[1] = homeStripField[2] = 0;
+  }
   if (petAnimal > static_cast<uint8_t>(PetAnimal::Bear)) petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
   if (petMode > static_cast<uint8_t>(PetMode::Reacts)) petMode = static_cast<uint8_t>(PetMode::Reacts);
   home_strip::clamp(*this);
