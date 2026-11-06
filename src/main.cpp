@@ -166,6 +166,7 @@ void setup() {
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
   touch.begin(tft);
+  ota::setProgressDisplay(&tft);
 
   pages.add(&homePage);
   pages.add(&hourlyPage);

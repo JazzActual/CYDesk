@@ -26,15 +26,26 @@ The same page installs a blank board and updates one that already runs CYDesk.
 
 Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.
 
-### Update without USB (Wi‑Fi OTA)
+### Update over Wi‑Fi (no laptop flash)
 
-After the board is on your home Wi‑Fi, PlatformIO can push a new build over the network. Use the env that matches the panel (`e32r28t`, `cyd35`, or `cyd40`):
+After the board is on your home Wi‑Fi and running a build that includes the update UI:
+
+1. Open **http://cydesk.local** (or the IP on Status).
+2. Scroll to **Firmware** → **Check for updates**.
+3. If a newer build is listed, **Update now**. Watch the desk for progress; it reboots when done. Keep power on.
+
+The board pulls `channel.json` + `app.bin` for its size (2.8 / 3.5 R / 4.0 R) from the same GitHub Pages site as the USB installer. The first time you move from an older "no OTA" image, use the USB installer once (erase still off) so the partition table gains a second app slot.
+
+**Backups still work**
+
+- USB installer with Erase unchecked (keeps Wi‑Fi and keys).
+- PlatformIO espota from a computer on the same Wi‑Fi:
 
 ```
 pio run -e e32r28t -t upload --upload-protocol espota --upload-port cydesk.local --upload-flags --auth=cydesk
 ```
 
-Password is `cydesk`. The desk's settings page (`http://cydesk.local`) repeats this under Firmware. The first time you move from an older "no OTA" image, use the USB installer once (erase still off) so the partition table gains a second app slot; later updates can stay on Wi‑Fi.
+Password is `cydesk`. Use `-e cyd35` or `-e cyd40` for those boards.
 
 ## Pages
 
