@@ -24,16 +24,19 @@ constexpr int GREETING_Y = 12;      // top of the greeting (24 px font)
 constexpr int DATE_Y = 44;          // top of the date (14 px font), under the greeting
 constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
 constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
-constexpr int STRIP_ROW_H = 16;     // Tiny font + a little air
+// Compact strip: built-in font 1 (~8 px), tight rows, narrow column so a
+// long greeting still has room on the left. Hidden when the source is Off.
+constexpr int STRIP_ROW_H = 11;
+constexpr int STRIP_RIGHT = 8;   // inset from the screen edge
+constexpr int STRIP_GAP = 4;     // air between greeting/date and the strip
+constexpr int STRIP_FONT = 1;    // TFT_eSPI built-in GLCD
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
 
-// Top-right stats strip. Wide enough for "mo #  #1.25k"; wider boards get
-// a touch more room so the labels breathe. Hidden when the source is Off.
-int statsStripWidth(TFT_eSPI& tft) { return layout::wide(tft) ? 118 : 100; }
-int statsStripLeft(TFT_eSPI& tft) { return tft.width() - MARGIN - statsStripWidth(tft); }
+int statsStripWidth(TFT_eSPI& tft) { return layout::wide(tft) ? 92 : 76; }
+int statsStripLeft(TFT_eSPI& tft) { return tft.width() - STRIP_RIGHT - statsStripWidth(tft); }
 int contentRight(TFT_eSPI& tft, HomeStripSource source) {
   if (source == HomeStripSource::Off) return tft.width() - MARGIN;
-  return statsStripLeft(tft) - 8;
+  return statsStripLeft(tft) - STRIP_GAP;
 }
 
 struct Place {
@@ -481,13 +484,15 @@ void HomePage::drawStatsStrip(TFT_eSPI& tft) {
   stripVisible_ = true;
   stripW_ = statsStripWidth(tft);
   stripLeft_ = statsStripLeft(tft);
-  stripTop_ = GREETING_Y;
+  stripTop_ = GREETING_Y - 1;
   stripRowH_ = STRIP_ROW_H;
+  const int valueX = tft.width() - STRIP_RIGHT;
 
-  tft.fillRect(stripLeft_ - 2, stripTop_ - 2, stripW_ + MARGIN + 2,
+  tft.fillRect(stripLeft_ - 2, stripTop_ - 1, stripW_ + STRIP_RIGHT + 2,
                home_strip::LINES * STRIP_ROW_H + 2, theme::BG);
 
-  fonts::use(tft, fonts::Id::Tiny);
+  // Built-in font 1 is denser than Tiny, so longer greetings keep more width.
+  fonts::use(tft, fonts::Id::BuiltIn);
   for (int i = 0; i < home_strip::LINES; i++) {
     const uint8_t field = settings_.homeStripField[i];
     const String value = home_strip::formatValue(source, field);
@@ -495,16 +500,16 @@ void HomePage::drawStatsStrip(TFT_eSPI& tft) {
     const int y = stripTop_ + i * stripRowH_;
     tft.setTextDatum(TL_DATUM);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(home_strip::fieldLabel(source, field), stripLeft_, y);
+    tft.drawString(home_strip::fieldLabel(source, field), stripLeft_, y, STRIP_FONT);
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(home_strip::valueColour(source, field, haveValue), theme::BG);
-    tft.drawString(value, tft.width() - MARGIN, y);
+    tft.drawString(value, valueX, y, STRIP_FONT);
   }
 }
 
 int HomePage::tapTarget(int16_t x, int16_t y) const {
   if (shownMode_ != Mode::Clock || !stripVisible_) return -1;
-  if (x < stripLeft_ - 4 || x > stripLeft_ + stripW_ + MARGIN) return -1;
+  if (x < stripLeft_ - 4 || x > stripLeft_ + stripW_ + STRIP_RIGHT) return -1;
   if (y < stripTop_ - 4 || y >= stripTop_ + home_strip::LINES * stripRowH_ + 4) return -1;
   return home_strip::pageIndex(settings_.stripSource());
 }
