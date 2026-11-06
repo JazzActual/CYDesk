@@ -52,7 +52,7 @@
 <body>
 <main>
   <h1>Install CYDesk</h1>
-  <p class="sub">Pick the size on the back of the board. Both are plain ESP32s, so the page cannot tell them apart. <span id="version"></span></p>
+  <p class="sub">Pick the size on the back of the board. These are plain ESP32s, so the page cannot tell them apart. <span id="version"></span></p>
 
   <ol>
     <li>Use <strong>Chrome, Edge, or Firefox</strong> on a computer. Phones and Safari can't see the USB port.</li>
@@ -78,17 +78,25 @@
     <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
   </esp-web-install-button>
 
-  <h2>3.5 inch</h2>
-  <p class="hint">ESP32-3248S035<strong>R</strong>, the resistive one. 320×480. The capacitive board (the one ending in C) uses a different touch chip.</p>
+  <h2>3.5 inch resistive</h2>
+  <p class="hint">ESP32-3248S035<strong>R</strong>. 320×480. Not the capacitive board ending in <strong>C</strong>.</p>
   <esp-web-install-button manifest="cyd35/manifest.json">
-    <button slot="activate">Install 3.5 inch</button>
+    <button slot="activate">Install 3.5 inch R</button>
+    <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
+    <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
+  </esp-web-install-button>
+
+  <h2>4.0 inch resistive</h2>
+  <p class="hint">E32R40T / ESP32-32E. 320×480 ST7796, resistive touch. Not the no-touch E32N40T, not capacitive 4", and not the Guition 480×480 ESP32-S3 (4848S040).</p>
+  <esp-web-install-button manifest="cyd40/manifest.json">
+    <button slot="activate">Install 4.0 inch R</button>
     <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
     <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
   </esp-web-install-button>
 
   <div class="note">
     <p>Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.</p>
-    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" file. <code>pio run -e cyd35</code> rebuilds the 3.5" file.</p>
+    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" file. <code>pio run -e cyd35</code> and <code>pio run -e cyd40</code> rebuild the taller boards.</p>
   </div>
 </main>
 <script>

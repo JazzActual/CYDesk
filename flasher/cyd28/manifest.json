@@ -1,6 +1,6 @@
 {
   "name": "CYDesk 2.8",
-  "version": "2026-11-05",
+  "version": "2026-11-06",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [

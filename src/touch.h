@@ -18,8 +18,8 @@ class TouchInput {
   static constexpr uint32_t LONG_PRESS_MS = 5000;
   static constexpr uint32_t MAX_TAP_MS = 800;
 
-  // `display` is the screen already started with tft.init(). The 3.5" board
-  // reads the touch chip through that same connection.
+  // `display` is the screen already started with tft.init(). The 3.5" and 4.0"
+  // resistive boards read the touch chip through that same connection.
   void begin(TFT_eSPI& display);
 
   // Call every loop(). Returns at most one event per press.

@@ -1,5 +1,7 @@
 // Screen-size helpers. The desk was designed on the 2.8" board (320×240
-// landscape). The 3.5" board is 480×320 landscape: same pages, more room.
+// landscape). The 3.5" and 4.0" resistive boards are both 480×320 landscape
+// (same ST7796 panel resolution); the 4" glass is physically larger, so icons
+// bump one more step when BOARD_CYD40 is set.
 //
 // Home anchors weather to the bottom-right so the 2.8" positions stay as
 // approved and the extra pixels fall into the middle. The hero-stat pages
@@ -11,7 +13,7 @@
 
 namespace layout {
 
-// Native landscape height of the 2.8" board. Anything taller is the 3.5".
+// Native landscape height of the 2.8" board. Anything taller is 3.5" / 4.0".
 constexpr int BASE_H = 240;
 constexpr int BASE_W = 320;
 
@@ -19,17 +21,30 @@ constexpr int BASE_W = 320;
 inline bool tall(TFT_eSPI& tft) { return tft.height() > BASE_H; }
 inline bool wide(TFT_eSPI& tft) { return tft.width() > BASE_W; }
 
+#if defined(BOARD_CYD40)
+constexpr bool kFourInch = true;
+#else
+constexpr bool kFourInch = false;
+#endif
+
 // Weather icon on Home: a touch larger when there is room under the clock.
-inline int homeWeatherIcon(TFT_eSPI& tft) { return tall(tft) ? 88 : 72; }
+inline int homeWeatherIcon(TFT_eSPI& tft) {
+  if (!tall(tft)) return 72;
+  return kFourInch ? 96 : 88;
+}
 
 // Hourly tile icon: same idea, keeps the 6×2 grid readable on 480×320.
-inline int hourlyIcon(TFT_eSPI& tft) { return tall(tft) ? 48 : 40; }
+inline int hourlyIcon(TFT_eSPI& tft) {
+  if (!tall(tft)) return 40;
+  return kFourInch ? 52 : 48;
+}
 
 // Finish-setup QR: grow with the shorter edge so it stays scannable.
 inline int setupQrSize(TFT_eSPI& tft) {
   const int side = tft.height() < tft.width() ? tft.height() : tft.width();
-  // 120 on 240-tall; ~160 on 320-tall. Leave room for the side copy.
-  return side <= BASE_H ? 120 : 160;
+  // 120 on 240-tall; ~160 on 320-tall; a bit more on the 4" glass.
+  if (side <= BASE_H) return 120;
+  return kFourInch ? 176 : 160;
 }
 
 // Vertical positions for the hero-count pages. Exact 2.8" numbers when the
@@ -70,6 +85,9 @@ inline HeroStats heroStats(int height) {
 }
 
 // Status page row pitch: a little more air on a taller screen.
-inline int statusRowPitch(TFT_eSPI& tft) { return tall(tft) ? 36 : 28; }
+inline int statusRowPitch(TFT_eSPI& tft) {
+  if (!tall(tft)) return 28;
+  return kFourInch ? 40 : 36;
+}
 
 }  // namespace layout

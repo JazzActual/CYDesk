@@ -9,7 +9,7 @@
 
 A desk clock for the Cheap Yellow Display: a small ESP32 with a color touchscreen. It shows the time, the weather, a pixel pet, and a few optional accounts. Tap the screen to move to the next page. Hold for about five seconds to change the Wi-Fi network.
 
-CYDesk 3.5 supports the 2.8" and 3.5" resistive Cheap Yellow Displays. The 2.8" board is the one that has been lived with day to day. The 3.5" build uses the same pages and settings; layouts stretch to 480×320 instead of letterboxing the 2.8" positions. The capacitive 3.5" (ending in **C**) and the 4" boards are still not supported.
+CYDesk supports the 2.8", 3.5" resistive, and 4.0" resistive Cheap Yellow Displays. The 2.8" board is the one that has been lived with day to day. The 3.5" and 4.0" builds use the same pages and settings on a 480×320 landscape panel; icons bump a little more on the 4" glass. Capacitive panels (ending in **C**), the no-touch E32N40T, and the Guition 480×480 ESP32-S3 (4848S040) are not supported.
 
 ## Put it on a board
 
@@ -106,9 +106,10 @@ Weather refreshes about every 15 minutes and covers the current conditions, sunr
 | Size | Board | Screen | Install button |
 | --- | --- | --- | --- |
 | 2.8" | E32R28T / ESP32-2432S028 | 240×320, ILI9341 | 2.8 inch |
-| 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796 | 3.5 inch |
+| 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796 | 3.5 inch R |
+| 4.0" resistive | E32R40T / ESP32-32E | 320×480, ST7796 | 4.0 inch R |
 
-On the 3.5" board, Home still anchors weather to the bottom-right (so the 2.8" clock block stays where it was approved), and the hero-stat pages (Badge, WiGLE, Wardrift, Stars) stretch their mid band instead of sliding a fixed 240 px strip down. Hourly tiles and the setup QR grow a little with the taller screen. If colours look swapped or touch feels dead after flashing 3.5", say so — those are the two board quirks that still need a real panel to confirm. The capacitive 3.5" (ending in **C**) and the 4" boards are not this build.
+On the taller boards, Home still anchors weather to the bottom-right (so the 2.8" clock block stays where it was approved), and the hero-stat pages (Badge, WiGLE, Wardrift, Stars) stretch their mid band instead of sliding a fixed 240 px strip down. Hourly tiles and the setup QR grow with the taller screen. The 4.0" R panel is the same pixel count as the 3.5" R; icons and the QR are a step larger for the bigger glass. If colours look swapped or touch feels dead after flashing 3.5" or 4.0", say so — those are the board quirks that still need a real panel to confirm.
 
 ## Build from source
 
@@ -118,10 +119,11 @@ On the 3.5" board, Home still anchors weather to the bottom-right (so the 2.8" c
 pio run -t upload
 ```
 
-The 3.5" resistive board is a separate build. Only use this when that board is the one plugged in:
+The taller boards are separate builds. Only use these when that board is the one plugged in:
 
 ```
 pio run -e cyd35 -t upload
+pio run -e cyd40 -t upload
 ```
 
-`pio run` and `pio run -e cyd35` also refresh the files the installer page serves. Pushing `main` publishes them.
+`pio run`, `pio run -e cyd35`, and `pio run -e cyd40` also refresh the files the installer page serves. Pushing `main` publishes them.

@@ -13,9 +13,15 @@ from pathlib import Path
 def stage_flasher(source, target, env):
     build = Path(env.subst("$BUILD_DIR"))
     project = Path(env.subst("$PROJECT_DIR"))
-    # One folder per board. Both chips are plain ESP32, so the installer
-    # page has to ask which size rather than guessing from the chip.
-    folder = "cyd35" if env["PIOENV"] == "cyd35" else "cyd28"
+    # One folder per board. All of these chips are plain ESP32, so the
+    # installer page has to ask which size rather than guessing from the chip.
+    pioenv = env["PIOENV"]
+    if pioenv == "cyd40":
+        folder, name = "cyd40", "CYDesk 4.0 R"
+    elif pioenv == "cyd35":
+        folder, name = "cyd35", "CYDesk 3.5"
+    else:
+        folder, name = "cyd28", "CYDesk 2.8"
     out_dir = project / "flasher" / folder
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -55,7 +61,7 @@ def stage_flasher(source, target, env):
         )
 
     manifest = {
-        "name": "CYDesk 3.5" if folder == "cyd35" else "CYDesk 2.8",
+        "name": name,
         "version": datetime.date.today().isoformat(),
         "new_install_prompt_erase": True,
         "new_install_improv_wait_time": 0,
