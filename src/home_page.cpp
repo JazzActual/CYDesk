@@ -24,16 +24,36 @@ constexpr int GREETING_Y = 12;      // top of the greeting (24 px font)
 constexpr int DATE_Y = 44;          // top of the date (14 px font), under the greeting
 constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
 constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
-// Top-right stats strip (Tiny font). Same size on 2.8 / 3.5 / 4.0 — the
-// first layout the owner preferred. Hidden when the source is Off.
-constexpr int STRIP_ROW_H = 16;
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
 
-int statsStripWidth(TFT_eSPI& tft) { return layout::wide(tft) ? 118 : 100; }
-int statsStripLeft(TFT_eSPI& tft) { return tft.width() - MARGIN - statsStripWidth(tft); }
+// Home strip sizing. The 2.8" (320 wide) uses a denser column so longer
+// greetings still fit; 3.5" / 4.0" keep the original larger Tiny-font strip.
+struct StripLayout {
+  int width;
+  int rowH;
+  int right;   // inset from the screen edge
+  int gap;     // air between greeting/date and the strip
+  int top;
+  bool compact;  // built-in font 1 when true; Tiny when false
+};
+
+StripLayout stripLayout(TFT_eSPI& tft) {
+  if (layout::wide(tft)) {
+    // 3.5" / 4.0" — original larger strip.
+    return StripLayout{118, 16, MARGIN, 8, GREETING_Y, false};
+  }
+  // 2.8" — compact strip.
+  return StripLayout{76, 11, 8, 4, GREETING_Y - 1, true};
+}
+
+int statsStripLeft(TFT_eSPI& tft, const StripLayout& s) {
+  return tft.width() - s.right - s.width;
+}
+
 int contentRight(TFT_eSPI& tft, HomeStripSource source) {
   if (source == HomeStripSource::Off) return tft.width() - MARGIN;
-  return statsStripLeft(tft) - 8;
+  const StripLayout s = stripLayout(tft);
+  return statsStripLeft(tft, s) - s.gap;
 }
 
 struct Place {
@@ -478,16 +498,22 @@ void HomePage::drawStatsStrip(TFT_eSPI& tft) {
     return;
   }
 
+  const StripLayout strip = stripLayout(tft);
   stripVisible_ = true;
-  stripW_ = statsStripWidth(tft);
-  stripLeft_ = statsStripLeft(tft);
-  stripTop_ = GREETING_Y;
-  stripRowH_ = STRIP_ROW_H;
+  stripW_ = strip.width;
+  stripLeft_ = statsStripLeft(tft, strip);
+  stripTop_ = strip.top;
+  stripRowH_ = strip.rowH;
+  const int valueX = tft.width() - strip.right;
 
-  tft.fillRect(stripLeft_ - 2, stripTop_ - 2, stripW_ + MARGIN + 2,
-               home_strip::LINES * STRIP_ROW_H + 2, theme::BG);
+  tft.fillRect(stripLeft_ - 2, stripTop_ - (strip.compact ? 1 : 2),
+               stripW_ + strip.right + 2, home_strip::LINES * strip.rowH + 2, theme::BG);
 
-  fonts::use(tft, fonts::Id::Tiny);
+  if (strip.compact) {
+    fonts::use(tft, fonts::Id::BuiltIn);
+  } else {
+    fonts::use(tft, fonts::Id::Tiny);
+  }
   for (int i = 0; i < home_strip::LINES; i++) {
     const uint8_t field = settings_.homeStripField[i];
     const String value = home_strip::formatValue(source, field);
@@ -495,16 +521,25 @@ void HomePage::drawStatsStrip(TFT_eSPI& tft) {
     const int y = stripTop_ + i * stripRowH_;
     tft.setTextDatum(TL_DATUM);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(home_strip::fieldLabel(source, field), stripLeft_, y);
+    if (strip.compact) {
+      tft.drawString(home_strip::fieldLabel(source, field), stripLeft_, y, 1);
+    } else {
+      tft.drawString(home_strip::fieldLabel(source, field), stripLeft_, y);
+    }
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(home_strip::valueColour(source, field, haveValue), theme::BG);
-    tft.drawString(value, tft.width() - MARGIN, y);
+    if (strip.compact) {
+      tft.drawString(value, valueX, y, 1);
+    } else {
+      tft.drawString(value, valueX, y);
+    }
   }
 }
 
 int HomePage::tapTarget(int16_t x, int16_t y) const {
   if (shownMode_ != Mode::Clock || !stripVisible_) return -1;
-  if (x < stripLeft_ - 4 || x > stripLeft_ + stripW_ + MARGIN) return -1;
+  // Hit box uses the last drawn bounds (already sized for this board).
+  if (x < stripLeft_ - 4 || x > stripLeft_ + stripW_ + 14) return -1;
   if (y < stripTop_ - 4 || y >= stripTop_ + home_strip::LINES * stripRowH_ + 4) return -1;
   return home_strip::pageIndex(settings_.stripSource());
 }
