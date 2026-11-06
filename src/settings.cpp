@@ -2,6 +2,7 @@
 
 #include <Preferences.h>
 
+#include "home_strip.h"
 #include "theme.h"
 
 namespace {
@@ -38,8 +39,15 @@ void Settings::load() {
   if (screens == 0x7F) screens = SCREENS_ALL;
   screens |= 1u << ScreenStatus;
   if ((screens & ~(1u << ScreenStatus)) == 0) screens |= 1u << ScreenHome;
+  // Packed: source in low byte, then the three field picks.
+  const uint32_t strip = prefs.isKey("hstrip") ? prefs.getUInt("hstrip", 0) : 0;
+  homeStripSource = static_cast<uint8_t>(strip & 0xFFu);
+  homeStripField[0] = static_cast<uint8_t>((strip >> 8) & 0xFFu);
+  homeStripField[1] = static_cast<uint8_t>((strip >> 16) & 0xFFu);
+  homeStripField[2] = static_cast<uint8_t>((strip >> 24) & 0xFFu);
   if (petAnimal > static_cast<uint8_t>(PetAnimal::Bear)) petAnimal = static_cast<uint8_t>(PetAnimal::Fox);
   if (petMode > static_cast<uint8_t>(PetMode::Reacts)) petMode = static_cast<uint8_t>(PetMode::Reacts);
+  home_strip::clamp(*this);
   theme::setAccent(accent);
   placeLabel = prefs.getString("place", "");
   const bool dropBadge = prefs.isKey("badge");
@@ -79,6 +87,11 @@ void Settings::save() const {
   prefs.putUChar("petmode", petMode);
   prefs.putUChar("screens", screens);
   prefs.putUInt("accent", accent & 0xFFFFFFu);
+  const uint32_t strip = static_cast<uint32_t>(homeStripSource) |
+                         (static_cast<uint32_t>(homeStripField[0]) << 8) |
+                         (static_cast<uint32_t>(homeStripField[1]) << 16) |
+                         (static_cast<uint32_t>(homeStripField[2]) << 24);
+  prefs.putUInt("hstrip", strip);
   prefs.putString("place", placeLabel);
   prefs.remove("city");  // left over from before the switch to ZIP codes
   prefs.end();

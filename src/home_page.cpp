@@ -4,12 +4,16 @@
 #include <WiFi.h>
 
 #include "fonts.h"
+#include "home_strip.h"
 #include "layout.h"
 #include "pet.h"
 #include "theme.h"
 #include "timekeeping.h"
+#include "wardrift_service.h"
+#include "wdgwars_service.h"
 #include "weather_icons.h"
 #include "weather_service.h"
+#include "wigle_service.h"
 
 namespace {
 // Top block is the same on every screen. The weather cluster is measured from
@@ -20,7 +24,17 @@ constexpr int GREETING_Y = 12;      // top of the greeting (24 px font)
 constexpr int DATE_Y = 44;          // top of the date (14 px font), under the greeting
 constexpr int TIME_TOP = 62;        // top of the area cleared for the clock
 constexpr int TIME_BASELINE = 110;  // clock digits and AM/PM sit on this line
+constexpr int STRIP_ROW_H = 16;     // Tiny font + a little air
 constexpr uint16_t SUN_COLOUR = theme::rgb(255, 200, 61);
+
+// Top-right stats strip. Wide enough for "mo #  #1.25k"; wider boards get
+// a touch more room so the labels breathe. Hidden when the source is Off.
+int statsStripWidth(TFT_eSPI& tft) { return layout::wide(tft) ? 118 : 100; }
+int statsStripLeft(TFT_eSPI& tft) { return tft.width() - MARGIN - statsStripWidth(tft); }
+int contentRight(TFT_eSPI& tft, HomeStripSource source) {
+  if (source == HomeStripSource::Off) return tft.width() - MARGIN;
+  return statsStripLeft(tft) - 8;
+}
 
 struct Place {
   int icon;
@@ -193,12 +207,14 @@ void HomePage::draw(TFT_eSPI& tft) {
   shownMinute_ = -1;
   shownWeather_ = "";
   shownSun_ = "";
+  shownStrip_ = "";
   shownReady_ = timekeeping::ready();
 
   struct tm now;
   const int hour = (shownReady_ && timekeeping::localNow(now)) ? now.tm_hour : 12;
   drawGreeting(tft, hour);
   drawTime(tft);
+  drawStatsStrip(tft);
   drawWeather(tft);
   drawSunEvents(tft);
   pet::draw(tft, settings_);
@@ -269,6 +285,7 @@ void HomePage::update(TFT_eSPI& tft) {
   }
   if (weatherSignature() != shownWeather_) drawWeather(tft);
   if (sunSignature() != shownSun_) drawSunEvents(tft);
+  if (stripSignature() != shownStrip_) drawStatsStrip(tft);
   if (shownFreshness_ != (demoStep_ < 0 ? freshnessMark() : "")) drawTime(tft);
 
   struct tm now;
@@ -284,18 +301,21 @@ void HomePage::drawGreeting(TFT_eSPI& tft, int hour) {
   if (text == shownGreeting_) return;
   shownGreeting_ = text;
 
-  tft.fillRect(0, GREETING_Y - 2, tft.width(), 32, theme::BG);
+  // Leave the top-right strip alone; it redraws on its own signature.
+  const int clearW = contentRight(tft, settings_.stripSource());
+  tft.fillRect(0, GREETING_Y - 2, clearW, 32, theme::BG);
   fonts::use(tft, fonts::Id::Medium);
   tft.setTextDatum(TL_DATUM);
   tft.setTextColor(theme::accent(), theme::BG);
-  tft.drawString(fitWidth(tft, text, tft.width() - 2 * MARGIN), MARGIN, GREETING_Y);
+  tft.drawString(fitWidth(tft, text, clearW - MARGIN), MARGIN, GREETING_Y);
 }
 
 void HomePage::drawTime(TFT_eSPI& tft) {
-  // Clear the date + clock area. Happens once a minute. Full width — sun
-  // events sit below the clock now, above the weather block.
-  tft.fillRect(0, DATE_Y - 2, tft.width(), TIME_TOP - DATE_Y + 2, theme::BG);
-  tft.fillRect(0, TIME_TOP, tft.width(), TIME_BASELINE - TIME_TOP + 8, theme::BG);
+  // Clear the date + clock area. Happens once a minute. Leave the stats
+  // strip's column alone so a clock tick doesn't wipe the ranks.
+  const int clearW = contentRight(tft, settings_.stripSource());
+  tft.fillRect(0, DATE_Y - 2, clearW, TIME_TOP - DATE_Y + 2, theme::BG);
+  tft.fillRect(0, TIME_TOP, clearW, TIME_BASELINE - TIME_TOP + 8, theme::BG);
 
   struct tm now;
   const bool haveTime = timekeeping::ready() && timekeeping::localNow(now);
@@ -306,12 +326,16 @@ void HomePage::drawTime(TFT_eSPI& tft) {
   if (demoStep_ >= 0) {
     const IconKind kind = static_cast<IconKind>(demoStep_ / 2);
     tft.setTextColor(theme::PINK, theme::BG);
-    tft.drawString(String("Icon test ") + (demoStep_ + 1) + "/" + DEMO_STEPS + ": " +
-                       iconName(kind) + (demoStep_ % 2 ? ", night" : ", day"),
+    tft.drawString(fitWidth(tft,
+                            String("Icon test ") + (demoStep_ + 1) + "/" + DEMO_STEPS + ": " +
+                                iconName(kind) + (demoStep_ % 2 ? ", night" : ", day"),
+                            clearW - MARGIN),
                    MARGIN, DATE_Y);
   } else if (haveTime) {
     tft.setTextColor(theme::TEXT, theme::BG);
-    tft.drawString(String(DAYS[now.tm_wday]) + ", " + MONTHS[now.tm_mon] + " " + now.tm_mday,
+    tft.drawString(fitWidth(tft,
+                            String(DAYS[now.tm_wday]) + ", " + MONTHS[now.tm_mon] + " " + now.tm_mday,
+                            clearW - MARGIN),
                    MARGIN, DATE_Y);
   } else {
     tft.setTextColor(theme::MUTED, theme::BG);
@@ -319,13 +343,13 @@ void HomePage::drawTime(TFT_eSPI& tft) {
                    MARGIN, DATE_Y);
   }
 
-  // Right end of the date line. Hidden during the icon test, which uses that row.
+  // Freshness sits just left of the strip. Hidden during the icon test.
   const char* mark = demoStep_ < 0 ? freshnessMark() : "";
   shownFreshness_ = mark;
   if (mark[0] != '\0' && haveTime) {
     tft.setTextDatum(TR_DATUM);
     tft.setTextColor(theme::MUTED, theme::BG);
-    tft.drawString(mark, tft.width() - MARGIN, DATE_Y);
+    tft.drawString(mark, clearW, DATE_Y);
   }
 
   if (!haveTime) {
@@ -414,4 +438,73 @@ void HomePage::drawWeather(TFT_eSPI& tft) {
     tft.setTextColor(theme::MUTED, theme::BG);
     tft.drawString(String(w.humidity) + "%RH", p.textRight, p.humidityY);
   }
+}
+
+String HomePage::stripSignature() const {
+  const HomeStripSource source = settings_.stripSource();
+  if (source == HomeStripSource::Off) return "off";
+  String s = String(static_cast<unsigned>(source));
+  for (int i = 0; i < home_strip::LINES; i++) {
+    s += "/";
+    s += settings_.homeStripField[i];
+  }
+  s += ":";
+  switch (source) {
+    case HomeStripSource::Wdg:
+      s += wdg::generation();
+      break;
+    case HomeStripSource::Wigle:
+      s += wigle::generation();
+      break;
+    case HomeStripSource::Wardrift:
+      s += wardrift::generation();
+      break;
+    default:
+      break;
+  }
+  for (int i = 0; i < home_strip::LINES; i++) {
+    s += "|";
+    s += home_strip::formatValue(source, settings_.homeStripField[i]);
+  }
+  return s;
+}
+
+void HomePage::drawStatsStrip(TFT_eSPI& tft) {
+  shownStrip_ = stripSignature();
+  const HomeStripSource source = settings_.stripSource();
+  if (source == HomeStripSource::Off) {
+    stripVisible_ = false;
+    stripW_ = 0;
+    return;
+  }
+
+  stripVisible_ = true;
+  stripW_ = statsStripWidth(tft);
+  stripLeft_ = statsStripLeft(tft);
+  stripTop_ = GREETING_Y;
+  stripRowH_ = STRIP_ROW_H;
+
+  tft.fillRect(stripLeft_ - 2, stripTop_ - 2, stripW_ + MARGIN + 2,
+               home_strip::LINES * STRIP_ROW_H + 2, theme::BG);
+
+  fonts::use(tft, fonts::Id::Tiny);
+  for (int i = 0; i < home_strip::LINES; i++) {
+    const uint8_t field = settings_.homeStripField[i];
+    const String value = home_strip::formatValue(source, field);
+    const bool haveValue = value != "—";
+    const int y = stripTop_ + i * stripRowH_;
+    tft.setTextDatum(TL_DATUM);
+    tft.setTextColor(theme::MUTED, theme::BG);
+    tft.drawString(home_strip::fieldLabel(source, field), stripLeft_, y);
+    tft.setTextDatum(TR_DATUM);
+    tft.setTextColor(home_strip::valueColour(source, field, haveValue), theme::BG);
+    tft.drawString(value, tft.width() - MARGIN, y);
+  }
+}
+
+int HomePage::tapTarget(int16_t x, int16_t y) const {
+  if (shownMode_ != Mode::Clock || !stripVisible_) return -1;
+  if (x < stripLeft_ - 4 || x > stripLeft_ + stripW_ + MARGIN) return -1;
+  if (y < stripTop_ - 4 || y >= stripTop_ + home_strip::LINES * stripRowH_ + 4) return -1;
+  return home_strip::pageIndex(settings_.stripSource());
 }
