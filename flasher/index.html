@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Install CYDesk</title>
+<title>Install or update CYDesk</title>
 <style>
   body {
     background: #0a1018;
@@ -53,6 +53,16 @@
     font-weight: 600;
     cursor: pointer;
   }
+  .callout {
+    background: #0f2531;
+    border-left: 3px solid #00e5ff;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 14px;
+    margin: 0 0 22px;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  .callout strong { color: #e6edf3; }
   .note {
     background: #0f2531;
     border-radius: 8px;
@@ -72,8 +82,15 @@
 </head>
 <body>
 <main>
-  <h1>Install CYDesk</h1>
-  <p class="sub">Pick the size on the back of the board. These are plain ESP32s, so the page cannot tell them apart. <span id="version"></span></p>
+  <h1>Install or update CYDesk</h1>
+  <p class="sub">Same button for a blank board and for one that already runs CYDesk. Pick the size on the back — these are plain ESP32s, so the page cannot tell them apart. <span id="version"></span></p>
+
+  <div class="callout">
+    <strong>Updating an already-flashed board?</strong>
+    Plug it in, pick the matching size, click the button, and leave
+    <strong>Erase device</strong> unchecked. That keeps the saved Wi-Fi network and API keys.
+    Check Erase only when you want a blank board.
+  </div>
 
   <ol>
     <li>Use <strong>Chrome, Edge, or Firefox</strong> on a computer. Phones and Safari can't see the USB port.</li>
@@ -85,10 +102,9 @@
         <li><strong>Linux:</strong> the driver is already in the system. Nothing to install.</li>
       </ul>
     </li>
-    <li>Choose <strong>your</strong> board in the list below, click Install, and pick the port. After the driver is in, it usually says <code>USB Serial</code>, <code>usbserial</code>, or <code>wchusbserial</code>. If the list is empty, the driver or the cable is the problem.</li>
-    <li>On the erase question, leave <strong>Erase device</strong> unchecked. Check it only if you want a blank board. That clears the saved Wi-Fi and keys.</li>
-    <li>When the screen is up, join the Wi-Fi network <code>CYDesk</code> and pick your home network. It has to be 2.4 GHz.</li>
-    <li>Open the address shown on the screen and add your name, ZIP code, WeatherAPI key, and WDGWars key. Those stay on your board.</li>
+    <li>Choose <strong>your</strong> board in the list below, click Install or update, and pick the port. After the driver is in, it usually says <code>USB Serial</code>, <code>usbserial</code>, or <code>wchusbserial</code>. If the list is empty, the driver or the cable is the problem.</li>
+    <li>When the dialog asks about erase: leave <strong>Erase device</strong> unchecked to keep settings. Check it only for a factory-clean flash.</li>
+    <li><strong>First install only:</strong> when the screen is up, join the Wi-Fi network <code>CYDesk</code> and pick your home network (2.4 GHz). Open the address on the screen and add your name, ZIP, WeatherAPI key, and optional account keys.</li>
   </ol>
 
   <h2>Board</h2>
@@ -101,13 +117,14 @@
   <p class="hint" id="board-hint">E32R28T / ESP32-2432S028. 240×320.</p>
 
   <esp-web-install-button id="install" manifest="cyd28/manifest.json">
-    <button slot="activate" id="install-label">Install 2.8 inch</button>
+    <button slot="activate" id="install-label">Install or update 2.8 inch</button>
     <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
     <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
   </esp-web-install-button>
 
   <div class="note">
     <p>Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.</p>
+    <p>After this firmware is on the board and it is on your Wi-Fi, open <code>http://cydesk.local</code> → <strong>Firmware</strong> → <strong>Check for updates</strong> to pull a newer build without a cable. PlatformIO <code>espota</code> still works as a backup.</p>
     <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" file. <code>pio run -e cyd35</code> and <code>pio run -e cyd40</code> rebuild the taller boards.</p>
   </div>
 </main>
@@ -120,7 +137,7 @@
   function applyBoard() {
     const option = boards.options[boards.selectedIndex];
     install.setAttribute("manifest", option.value);
-    installLabel.textContent = "Install " + option.dataset.label;
+    installLabel.textContent = "Install or update " + option.dataset.label;
     hint.textContent = option.dataset.hint;
     fetch(option.value)
       .then((r) => r.json())

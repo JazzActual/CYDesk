@@ -7,6 +7,7 @@
 
 #include "github_service.h"
 #include "home_strip.h"
+#include "ota.h"
 #include "theme.h"
 
 namespace settings_web {
@@ -380,10 +381,85 @@ void handleRoot() {
           "> Bear</label></div>";
 
   html += "<button type='submit'>Save to desk buddy</button></form>";
+
+  html += "<h1 id='firmware' style='margin-top:28px;font-size:18px'>Firmware</h1>"
+          "<div class='sub' style='margin-bottom:10px'>Running <code>" +
+          String(ota::version()) + "</code> (" + String(ota::boardId()) + ", compiled " +
+          String(ota::buildStamp()) + ").</div>";
+
+  html += "<div class='status'>";
+  if (ota::applyPending()) {
+    html += "<div class='wait'>Updating on the desk &mdash; watch the screen. "
+            "This page will stop responding until it reboots.</div>";
+  } else if (ota::applyResult() == ota::ApplyResult::Failed) {
+    html += "<div class='bad'>Update failed: " + escapeHtml(ota::applyMessage()) + "</div>";
+  } else if (ota::checkResult() == ota::CheckResult::Available) {
+    html += "<div class='ok'>Update available: <code>" + escapeHtml(ota::channelVersion()) +
+            "</code>";
+    if (ota::channelName()[0]) {
+      html += " (" + escapeHtml(ota::channelName()) + ")";
+    }
+    html += "</div>You have <code>" + String(ota::version()) + "</code>.";
+  } else if (ota::checkResult() == ota::CheckResult::UpToDate) {
+    html += "<div class='ok'>" + escapeHtml(ota::checkMessage()) + "</div>";
+  } else if (ota::checkResult() == ota::CheckResult::Failed) {
+    html += "<div class='bad'>" + escapeHtml(ota::checkMessage()) + "</div>";
+  } else {
+    html += "<div class='wait'>Not checked yet this boot.</div>";
+  }
+  html += "</div>";
+
+  html += "<form method='POST' action='/ota/check' style='margin-top:12px'>"
+          "<button type='submit'>Check for updates</button></form>";
+  if (ota::updateAvailable() && !ota::applyPending()) {
+    html += "<form method='POST' action='/ota/update' style='margin-top:8px' "
+            "onsubmit=\"return confirm('Update the desk now? Keep it powered on.');\">"
+            "<button type='submit'>Update now</button></form>"
+            "<form method='GET' action='/' style='margin-top:8px'>"
+            "<button type='submit' style='background:#0f2531;color:#e6edf3;"
+            "border:1px solid #5d7b8c'>Cancel</button></form>";
+  }
+
+  html += "<div class='hint' style='margin-top:14px'>"
+          "Checks <a href='" +
+          String(ota::CHANNEL_BASE) + "/" + String(ota::boardId()) +
+          "/channel.json'>the published channel</a> for this board size. "
+          "USB installer (leave Erase unchecked) and PlatformIO "
+          "<code>espota</code> (password <code>" +
+          String(ota::PASSWORD) + "</code>) still work as backups. "
+          "<a href='https://jazzactual.github.io/CYDesk/'>Open the USB installer</a>."
+          "</div>";
+
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
   html += FPSTR(PAGE_SCRIPT);
   html += "</body></html>";
 
+  server.send(200, "text/html; charset=utf-8", html);
+}
+
+void handleOtaCheck() {
+  ota::checkChannel();
+  server.sendHeader("Location", "/#firmware");
+  server.send(303);
+}
+
+void handleOtaUpdate() {
+  if (!ota::updateAvailable()) {
+    server.sendHeader("Location", "/#firmware");
+    server.send(303);
+    return;
+  }
+  // Reply first, then let loop() run the download so the browser gets a page.
+  ota::requestApply();
+  String html;
+  html.reserve(800);
+  html += FPSTR(PAGE_HEAD);
+  html += "<style>:root{--accent:#00e5ff;--on-accent:#0a1018}</style>";
+  html += "<h1>Updating</h1>"
+          "<div class='status'>Watch the desk buddy. It downloads the new image, "
+          "writes flash, and reboots. This page will stop responding.</div>"
+          "<p class='hint'>When it is back on Wi-Fi, reopen "
+          "<a href='/'>settings</a>.</p></body></html>";
   server.send(200, "text/html; charset=utf-8", html);
 }
 
@@ -489,6 +565,8 @@ void begin(Settings& s, const String& error) {
   if (!routesAdded) {
     server.on("/", HTTP_GET, handleRoot);
     server.on("/save", HTTP_POST, handleSave);
+    server.on("/ota/check", HTTP_POST, handleOtaCheck);
+    server.on("/ota/update", HTTP_POST, handleOtaUpdate);
     server.on("/icons", HTTP_GET, [] {
       iconTestRequested = true;
       server.send(200, "text/plain",

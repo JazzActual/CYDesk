@@ -66,15 +66,17 @@ class StatusPage : public Page {
       : settings_(settings), placeError_(placeError) {}
   const char* name() const override { return "Status"; }
   void draw(TFT_eSPI& tft) override;
-  void update(TFT_eSPI& tft) override;  // redraws when Wi-Fi, weather, or memory changes
+  void update(TFT_eSPI& tft) override;  // redraws when Wi-Fi, weather, memory, or OTA changes
 
  private:
   String weatherLine() const;
+  String updateLine() const;
 
   const Settings& settings_;
   const String& placeError_;
   bool shownConnected_ = false;
   String shownWeather_;
+  String shownUpdate_;
   uint32_t shownBlock_ = 0;
 };
 

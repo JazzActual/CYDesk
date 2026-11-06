@@ -4,6 +4,7 @@
 
 #include "fonts.h"
 #include "layout.h"
+#include "ota.h"
 #include "qr_draw.h"
 #include "settings.h"
 #include "settings_web.h"
@@ -134,6 +135,14 @@ String StatusPage::weatherLine() const {
   return "checking...";
 }
 
+String StatusPage::updateLine() const {
+  if (ota::updateAvailable()) return String(ota::channelVersion()) + " ready";
+  if (ota::checkResult() == ota::CheckResult::Failed) return "check failed";
+  if (ota::checkResult() == ota::CheckResult::UpToDate) return "up to date";
+  if (ota::checkResult() == ota::CheckResult::Checking) return "checking...";
+  return "";
+}
+
 void StatusPage::draw(TFT_eSPI& tft) {
   // update() calls draw() directly, skipping the page manager's font reset.
   fonts::use(tft, fonts::Id::BuiltIn);
@@ -172,6 +181,14 @@ void StatusPage::draw(TFT_eSPI& tft) {
   // The largest free block. An HTTPS download needs about 40 KB of it.
   const bool low = shownBlock_ < 40 * 1024;
   row("Memory", String(shownBlock_ / 1024) + " KB", low ? theme::PINK : theme::accent());
+  shownUpdate_ = updateLine();
+  row("Build", ota::version(), theme::MUTED);
+  if (shownUpdate_.length()) {
+    const uint16_t colour = ota::updateAvailable() ? theme::accent()
+                          : ota::checkResult() == ota::CheckResult::Failed ? theme::PINK
+                                                                           : theme::MUTED;
+    row("Update", shownUpdate_, colour);
+  }
 
   tft.setTextColor(theme::MUTED, theme::BG);
   tft.setTextDatum(BC_DATUM);
@@ -186,7 +203,10 @@ void StatusPage::update(TFT_eSPI& tft) {
   const uint32_t block = ESP.getMaxAllocHeap();
   const uint32_t gap = block > shownBlock_ ? block - shownBlock_ : shownBlock_ - block;
   const bool memoryMoved = gap >= 8 * 1024 || (block < 40 * 1024) != (shownBlock_ < 40 * 1024);
-  if (connected != shownConnected_ || memoryMoved || weatherLine() != shownWeather_) draw(tft);
+  if (connected != shownConnected_ || memoryMoved || weatherLine() != shownWeather_ ||
+      updateLine() != shownUpdate_) {
+    draw(tft);
+  }
 }
 
 // ---- PlaceholderPage -------------------------------------------------------
