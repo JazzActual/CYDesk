@@ -9,6 +9,14 @@
 enum class PetAnimal : uint8_t { None = 0, Fox = 1, Raccoon = 2, Owl = 3, Bear = 4 };
 enum class PetMode : uint8_t { Off = 0, Idle = 1, Reacts = 2 };
 
+// Which account feeds the three-line strip on Home. Off hides the strip.
+enum class HomeStripSource : uint8_t {
+  Off = 0,
+  Wdg = 1,
+  Wigle = 2,
+  Wardrift = 3
+};
+
 // Tap order. The bit in Settings::screens matches this index.
 enum Screen : uint8_t {
   ScreenHome = 0,
@@ -51,6 +59,14 @@ struct Settings {
   uint8_t screens = SCREENS_ALL;
   bool screenOn(uint8_t index) const {
     return index < ScreenCount && (screens & (1u << index)) != 0;
+  }
+
+  // Home top-right strip: one source, three fields from that source's metrics.
+  // Defaults to off so the greeting keeps the full width until configured.
+  uint8_t homeStripSource = static_cast<uint8_t>(HomeStripSource::Off);
+  uint8_t homeStripField[3] = {0, 1, 2};
+  HomeStripSource stripSource() const {
+    return static_cast<HomeStripSource>(homeStripSource);
   }
 
   // Filled in once WeatherAPI confirms the ZIP, e.g. "Chicago, Illinois".
