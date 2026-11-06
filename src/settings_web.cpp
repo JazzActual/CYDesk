@@ -6,6 +6,7 @@
 #include <WiFi.h>
 
 #include "github_service.h"
+#include "ota.h"
 #include "theme.h"
 
 namespace settings_web {
@@ -307,6 +308,27 @@ void handleRoot() {
           "> Bear</label></div>";
 
   html += "<button type='submit'>Save to desk buddy</button></form>";
+
+  html += "<h1 style='margin-top:28px;font-size:18px'>Firmware</h1>"
+          "<div class='sub' style='margin-bottom:10px'>Build " +
+          String(ota::buildStamp()) + ".</div>"
+          "<div class='status'>"
+          "Already on this board? Use the same web installer over USB and leave "
+          "<strong>Erase device</strong> unchecked &mdash; Wi-Fi and keys stay. "
+          "<a href='https://jazzactual.github.io/CYDesk/'>Open the installer</a>."
+          "<br><br>"
+          "On the same Wi-Fi, PlatformIO can also push an update without USB:"
+          "<br><code style='color:var(--accent,#00e5ff);font-size:13px;word-break:break-all'>"
+          "pio run -e &lt;board&gt; -t upload --upload-protocol espota "
+          "--upload-port " +
+          String(HOSTNAME) +
+          ".local --upload-flags --auth=" + String(ota::PASSWORD) +
+          "</code>"
+          "<br><span class='hint'>Board env: <code>e32r28t</code>, <code>cyd35</code>, or "
+          "<code>cyd40</code>. Password is <code>" +
+          String(ota::PASSWORD) + "</code>.</span>"
+          "</div>";
+
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
   html += FPSTR(PAGE_SCRIPT);
   html += "</body></html>";

@@ -27,6 +27,7 @@
 #include "github_service.h"
 #include "home_page.h"
 #include "hourly_page.h"
+#include "ota.h"
 #include "pages.h"
 #include "pins.h"
 #include "portal.h"
@@ -83,6 +84,7 @@ void ledsOff() {
 // and redraw the current page.
 void openWifiSetup(const char* reason) {
   settings_web::stop();  // the portal needs the web port for itself
+  ota::stop();           // free the OTA listener while the portal owns Wi-Fi
   fonts::use(tft, fonts::Id::BuiltIn);  // the portal screen uses the built-in fonts
   const bool connected = runWifiPortal(tft, reason);
   // The portal turns power-save back on. Don't call prepareWifi() here: that
@@ -103,6 +105,7 @@ bool startNetworkServices() {
   if (!settings_web::isRunning() && WiFi.status() == WL_CONNECTED) {
     settings_web::begin(settings, weather::lastError());
   }
+  ota::begin();
   timekeeping::begin();  // only does anything the first time
   started = true;
   return true;
@@ -211,6 +214,7 @@ void loop() {
   }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
+  ota::handle();
   // One download at a time: weather, then WDGWars, then WiGLE, then Wardrift,
   // then one GitHub repo.
   if (networkReady) {

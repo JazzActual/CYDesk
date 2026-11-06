@@ -4,6 +4,7 @@
 
 #include "fonts.h"
 #include "layout.h"
+#include "ota.h"
 #include "qr_draw.h"
 #include "settings.h"
 #include "settings_web.h"
@@ -172,6 +173,7 @@ void StatusPage::draw(TFT_eSPI& tft) {
   // The largest free block. An HTTPS download needs about 40 KB of it.
   const bool low = shownBlock_ < 40 * 1024;
   row("Memory", String(shownBlock_ / 1024) + " KB", low ? theme::PINK : theme::accent());
+  row("Build", ota::buildStamp(), theme::MUTED);
 
   tft.setTextColor(theme::MUTED, theme::BG);
   tft.setTextDatum(BC_DATUM);

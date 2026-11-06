@@ -17,12 +17,24 @@ Open the installer in **Chrome, Edge, or Firefox** on a computer (not a phone, a
 
 **[https://jazzactual.github.io/CYDesk/](https://jazzactual.github.io/CYDesk/)**
 
+The same page installs a blank board and updates one that already runs CYDesk.
+
 1. Plug the board in with a **data** USB cable. A charge-only cable will not show a port.
 2. These boards use a **CH340** USB chip. Windows and Mac need the driver from [WCH](https://github.com/WCH-IC/download/releases/tag/CH341) before a port appears. Run `CH341SER.EXE` on Windows, or install `CH341SER_MAC.ZIP` on a Mac (allow it under System Settings → Privacy & Security if macOS asks). Linux already has the driver. Unplug the board and plug it back in after installing.
-3. On the installer page, pick the size printed on the back of the board from the list, then Install. The port is usually named USB Serial, `usbserial`, or `wchusbserial`.
-4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys.
+3. On the installer page, pick the size printed on the back of the board from the list, then **Install or update**. The port is usually named USB Serial, `usbserial`, or `wchusbserial`.
+4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys. An update with erase off keeps them.
 
 Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.
+
+### Update without USB (Wi‑Fi OTA)
+
+After the board is on your home Wi‑Fi, PlatformIO can push a new build over the network. Use the env that matches the panel (`e32r28t`, `cyd35`, or `cyd40`):
+
+```
+pio run -e e32r28t -t upload --upload-protocol espota --upload-port cydesk.local --upload-flags --auth=cydesk
+```
+
+Password is `cydesk`. The desk's settings page (`http://cydesk.local`) repeats this under Firmware. The first time you move from an older "no OTA" image, use the USB installer once (erase still off) so the partition table gains a second app slot; later updates can stay on Wi‑Fi.
 
 ## Pages
 

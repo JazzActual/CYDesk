@@ -3,10 +3,15 @@
 # ESP Web Tools cannot patch flash mode and size the way esptool does during
 # pio upload, so this merges the bootloader, partition table, and app into
 # one image with those already filled in (DIO, 40 MHz, 4 MB — this board).
+#
+# Also copies the app-only image as app.bin. That is what ArduinoOTA / espota
+# send over Wi-Fi; the merged firmware.bin stays for USB (first install and
+# USB updates). A future HTTP-from-GitHub OTA would publish app.bin too.
 Import("env")
 
 import datetime
 import json
+import shutil
 from pathlib import Path
 
 
@@ -27,7 +32,9 @@ def stage_flasher(source, target, env):
 
     framework = Path(env.PioPlatform().get_package_dir("framework-arduinoespressif32"))
     boot_app0 = framework / "tools" / "partitions" / "boot_app0.bin"
+    app_src = build / "firmware.bin"
     merged = out_dir / "firmware.bin"
+    app_out = out_dir / "app.bin"
 
     def q(path):
         return '"' + str(path) + '"'
@@ -47,19 +54,24 @@ def stage_flasher(source, target, env):
             "0xe000",
             q(boot_app0),
             "0x10000",
-            q(build / "firmware.bin"),
+            q(app_src),
         ]
     )
     env.Execute(env.VerboseAction(cmd, "Packing the web flasher image"))
+    shutil.copy2(app_src, app_out)
 
     # The compiler is told to rewrite the home folder, but check the image
     # anyway. A hit here means a path was baked in and must not be committed.
     home = str(Path.home()).encode()
-    if home in merged.read_bytes():
-        raise SystemExit(
-            "firmware.bin still contains this computer's home folder"
-        )
+    for path in (merged, app_out):
+        if home in path.read_bytes():
+            raise SystemExit(
+                f"{path.name} still contains this computer's home folder"
+            )
 
+    # USB installer: merged image at offset 0. Erase is optional (prompted).
+    # Leaving erase off keeps NVS (Wi-Fi + keys) because blank 0xFF gaps in the
+    # merged image are skipped when written.
     manifest = {
         "name": name,
         "version": datetime.date.today().isoformat(),
@@ -73,7 +85,7 @@ def stage_flasher(source, target, env):
         ],
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f"Web flasher ready in flasher/{folder}/")
+    print(f"Web flasher ready in flasher/{folder}/ (merged + app.bin)")
 
 
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", stage_flasher)
