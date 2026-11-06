@@ -14,12 +14,34 @@
   }
   main { max-width: 520px; margin: 0 auto; }
   h1 { color: #00e5ff; font-size: 28px; margin: 0 0 6px; }
-  h2 { font-size: 16px; margin: 22px 0 2px; }
+  h2 { font-size: 16px; margin: 22px 0 8px; }
   esp-web-install-button { display: block; margin: 10px 0 6px; }
   .sub, .hint { color: #5d7b8c; }
   .sub { margin: 0 0 22px; }
   ol { margin: 0 0 22px; padding-left: 1.2em; line-height: 1.55; }
   li { margin: 0 0 10px; }
+  label.board-label {
+    display: block;
+    font-size: 14px;
+    color: #5d7b8c;
+    margin: 0 0 6px;
+  }
+  select#board {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0f2531;
+    color: #e6edf3;
+    border: 1px solid #5d7b8c;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    margin: 0 0 8px;
+  }
+  select#board:focus {
+    outline: 2px solid #00e5ff;
+    outline-offset: 1px;
+  }
+  #board-hint { margin: 0 0 4px; line-height: 1.45; font-size: 14px; }
   button {
     width: 100%;
     background: #00e5ff;
@@ -44,7 +66,6 @@
   code, a { color: #00e5ff; }
   ul { margin: 6px 0 0; padding-left: 1.2em; }
   li li { margin: 4px 0; }
-  .warn { color: #ff2d95; }
   #unsupported, #not-allowed { display: block; margin-top: 8px; }
 </style>
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -64,32 +85,23 @@
         <li><strong>Linux:</strong> the driver is already in the system. Nothing to install.</li>
       </ul>
     </li>
-    <li>Click the button for <strong>your</strong> size and choose the port. After the driver is in, it usually says <code>USB Serial</code>, <code>usbserial</code>, or <code>wchusbserial</code>. If the list is empty, the driver or the cable is the problem.</li>
+    <li>Choose <strong>your</strong> board in the list below, click Install, and pick the port. After the driver is in, it usually says <code>USB Serial</code>, <code>usbserial</code>, or <code>wchusbserial</code>. If the list is empty, the driver or the cable is the problem.</li>
     <li>On the erase question, leave <strong>Erase device</strong> unchecked. Check it only if you want a blank board. That clears the saved Wi-Fi and keys.</li>
     <li>When the screen is up, join the Wi-Fi network <code>CYDesk</code> and pick your home network. It has to be 2.4 GHz.</li>
     <li>Open the address shown on the screen and add your name, ZIP code, WeatherAPI key, and WDGWars key. Those stay on your board.</li>
   </ol>
 
-  <h2>2.8 inch</h2>
-  <p class="hint">E32R28T / ESP32-2432S028. 240×320.</p>
-  <esp-web-install-button manifest="cyd28/manifest.json">
-    <button slot="activate">Install 2.8 inch</button>
-    <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
-    <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
-  </esp-web-install-button>
+  <h2>Board</h2>
+  <label class="board-label" for="board">Which board are you flashing?</label>
+  <select id="board" aria-describedby="board-hint">
+    <option value="cyd28/manifest.json" data-label="2.8 inch" data-hint="E32R28T / ESP32-2432S028. 240×320.">2.8 inch — E32R28T / ESP32-2432S028</option>
+    <option value="cyd35/manifest.json" data-label="3.5 inch R" data-hint="ESP32-3248S035R (resistive). 320×480. Not the capacitive board ending in C.">3.5 inch R — ESP32-3248S035R</option>
+    <option value="cyd40/manifest.json" data-label="4.0 inch R" data-hint="E32R40T / ESP32-32E. 320×480 ST7796, resistive touch. Not E32N40T, not capacitive 4&quot;, not Guition 4848S040.">4.0 inch R — E32R40T / ESP32-32E</option>
+  </select>
+  <p class="hint" id="board-hint">E32R28T / ESP32-2432S028. 240×320.</p>
 
-  <h2>3.5 inch resistive</h2>
-  <p class="hint">ESP32-3248S035<strong>R</strong>. 320×480. Not the capacitive board ending in <strong>C</strong>.</p>
-  <esp-web-install-button manifest="cyd35/manifest.json">
-    <button slot="activate">Install 3.5 inch R</button>
-    <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
-    <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
-  </esp-web-install-button>
-
-  <h2>4.0 inch resistive</h2>
-  <p class="hint">E32R40T / ESP32-32E. 320×480 ST7796, resistive touch. Not the no-touch E32N40T, not capacitive 4", and not the Guition 480×480 ESP32-S3 (4848S040).</p>
-  <esp-web-install-button manifest="cyd40/manifest.json">
-    <button slot="activate">Install 4.0 inch R</button>
+  <esp-web-install-button id="install" manifest="cyd28/manifest.json">
+    <button slot="activate" id="install-label">Install 2.8 inch</button>
     <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
     <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
   </esp-web-install-button>
@@ -100,12 +112,26 @@
   </div>
 </main>
 <script>
-  fetch("cyd28/manifest.json")
-    .then((r) => r.json())
-    .then((m) => {
-      document.getElementById("version").textContent = "Firmware " + m.version + ".";
-    })
-    .catch(() => {});
+  const boards = document.getElementById("board");
+  const install = document.getElementById("install");
+  const installLabel = document.getElementById("install-label");
+  const hint = document.getElementById("board-hint");
+
+  function applyBoard() {
+    const option = boards.options[boards.selectedIndex];
+    install.setAttribute("manifest", option.value);
+    installLabel.textContent = "Install " + option.dataset.label;
+    hint.textContent = option.dataset.hint;
+    fetch(option.value)
+      .then((r) => r.json())
+      .then((m) => {
+        document.getElementById("version").textContent = "Firmware " + m.version + ".";
+      })
+      .catch(() => {});
+  }
+
+  boards.addEventListener("change", applyBoard);
+  applyBoard();
 </script>
 </body>
 </html>
