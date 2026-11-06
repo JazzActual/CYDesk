@@ -1,9 +1,11 @@
 # After each build, pack the firmware into flasher/ for the browser installer
 # and the in-app HTTPS OTA channel.
 #
-# ESP Web Tools cannot patch flash mode and size the way esptool does during
-# pio upload, so this merges the bootloader, partition table, and app into
-# one image with those already filled in (DIO, 40 MHz, 4 MB — this board).
+# USB installer (esp-web-tools) gets four separate images — bootloader,
+# partition table, otadata (boot_app0), and the app — at their real offsets.
+# A single merge_bin image at offset 0 pads the NVS gap (0x9000–0xe000) with
+# 0xFF; writing that range erases Wi-Fi and API keys even when "Erase device"
+# is unchecked. Listing parts that skip NVS keeps settings on update.
 #
 # Also copies the app-only image as app.bin and writes channel.json so a
 # board on Wi-Fi can discover and pull the matching variant.
@@ -14,6 +16,19 @@ import hashlib
 import json
 import shutil
 from pathlib import Path
+
+# Same layout as Arduino min_spiffs / huge_app: NVS lives here and must not
+# appear in any USB-installer part range.
+NVS_START = 0x9000
+NVS_END = 0xE000
+
+# ESP32 classic flash map used by this project.
+PARTS = (
+    ("bootloader.bin", 0x1000),
+    ("partitions.bin", 0x8000),
+    ("boot_app0.bin", 0xE000),
+    ("app.bin", 0x10000),
+)
 
 
 def stage_flasher(source, target, env):
@@ -32,10 +47,10 @@ def stage_flasher(source, target, env):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     framework = Path(env.PioPlatform().get_package_dir("framework-arduinoespressif32"))
-    boot_app0 = framework / "tools" / "partitions" / "boot_app0.bin"
+    boot_app0_src = framework / "tools" / "partitions" / "boot_app0.bin"
     app_src = build / "firmware.bin"
-    merged = out_dir / "firmware.bin"
-    app_out = out_dir / "app.bin"
+    boot_src = build / "bootloader.bin"
+    part_src = build / "partitions.bin"
 
     version_file = project / ".pio" / "cydesk_version.txt"
     if version_file.exists():
@@ -43,45 +58,49 @@ def stage_flasher(source, target, env):
     else:
         version = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M")
 
-    def q(path):
-        return '"' + str(path) + '"'
+    copies = {
+        "bootloader.bin": boot_src,
+        "partitions.bin": part_src,
+        "boot_app0.bin": boot_app0_src,
+        "app.bin": app_src,
+    }
+    for name_on_disk, src in copies.items():
+        if not src.exists():
+            raise SystemExit(f"missing build artifact for flasher: {src}")
+        shutil.copy2(src, out_dir / name_on_disk)
 
-    cmd = " ".join(
-        [
-            q(env.subst("$PYTHONEXE")),
-            q(env.subst("$OBJCOPY")),
-            "--chip esp32 merge_bin",
-            "-o",
-            q(merged),
-            "--flash_mode dio --flash_freq 40m --flash_size 4MB",
-            "0x1000",
-            q(build / "bootloader.bin"),
-            "0x8000",
-            q(build / "partitions.bin"),
-            "0xe000",
-            q(boot_app0),
-            "0x10000",
-            q(app_src),
-        ]
-    )
-    env.Execute(env.VerboseAction(cmd, "Packing the web flasher image"))
-    shutil.copy2(app_src, app_out)
+    # Drop the old merged image if a previous build left one. It must not be
+    # served — writing it wipes NVS.
+    merged = out_dir / "firmware.bin"
+    if merged.exists():
+        merged.unlink()
 
-    # The compiler is told to rewrite the home folder, but check the image
+    # Refuse to ship a part list that would touch NVS.
+    for part_name, offset in PARTS:
+        size = (out_dir / part_name).stat().st_size
+        end = offset + size
+        if offset < NVS_END and end > NVS_START:
+            raise SystemExit(
+                f"{part_name} @ 0x{offset:x}+{size} overlaps NVS "
+                f"(0x{NVS_START:x}-0x{NVS_END:x})"
+            )
+
+    # The compiler is told to rewrite the home folder, but check the images
     # anyway. A hit here means a path was baked in and must not be committed.
     home = str(Path.home()).encode()
-    for path in (merged, app_out):
+    for part_name, _offset in PARTS:
+        path = out_dir / part_name
         if home in path.read_bytes():
             raise SystemExit(
                 f"{path.name} still contains this computer's home folder"
             )
 
+    app_out = out_dir / "app.bin"
     app_bytes = app_out.read_bytes()
     sha256 = hashlib.sha256(app_bytes).hexdigest()
 
-    # USB installer: merged image at offset 0. Erase is optional (prompted).
-    # Leaving erase off keeps NVS (Wi-Fi + keys) because blank 0xFF gaps in the
-    # merged image are skipped when written.
+    # USB installer: discrete parts. Erase is optional (prompted); leave it
+    # off for updates so NVS (Wi-Fi + keys) is never written.
     manifest = {
         "name": name,
         "version": version,
@@ -90,7 +109,10 @@ def stage_flasher(source, target, env):
         "builds": [
             {
                 "chipFamily": "ESP32",
-                "parts": [{"path": "firmware.bin", "offset": 0}],
+                "parts": [
+                    {"path": part_name, "offset": offset}
+                    for part_name, offset in PARTS
+                ],
             }
         ],
     }

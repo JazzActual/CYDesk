@@ -20,7 +20,7 @@ Open the installer in **Chrome, Edge, or Firefox** on a computer (not a phone, a
 1. Plug the board in with a **data** USB cable. A charge-only cable will not show a port.
 2. These boards use a **CH340** USB chip. Windows and Mac need the driver from [WCH](https://github.com/WCH-IC/download/releases/tag/CH341) before a port appears. Run `CH341SER.EXE` on Windows, or install `CH341SER_MAC.ZIP` on a Mac (allow it under System Settings → Privacy & Security if macOS asks). Linux already has the driver. Unplug the board and plug it back in after installing.
 3. On the installer page, pick the size printed on the back of the board from the list, then **Install or update**. The port is usually named USB Serial, `usbserial`, or `wchusbserial`.
-4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys.
+4. Leave **Erase device** unchecked unless you want a blank board (that keeps Wi‑Fi and keys; Erase clears them).
 
 Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.
 
@@ -40,7 +40,7 @@ Same page as first install: [https://jazzactual.github.io/CYDesk/](https://jazza
 
 1. Plug in a **data** USB cable; use Chrome, Edge, or Firefox on a computer.
 2. Choose your board size → **Install or update** → pick the serial port.
-3. **Erase device unchecked** — updates firmware and **keeps** saved Wi‑Fi and API keys. Use this for normal upgrades and for the one-time partition migrate.
+3. **Erase device unchecked** — updates firmware and **keeps** saved Wi‑Fi and API keys. The installer writes bootloader, partition table, and app only; it does not touch the NVS settings region. Use this for normal upgrades and for the one-time partition migrate from older “huge app” builds (NVS stays at the same flash address).
 4. **Erase device checked** — full wipe. Use only when you want a blank board (clears Wi‑Fi and keys). You’ll go through the `CYDesk` portal and settings again afterward.
 
 ### 2. In-app update (Settings → Firmware)
