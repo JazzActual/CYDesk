@@ -195,9 +195,19 @@ void setup() {
 
 void loop() {
   switch (touch.poll()) {
-    case TouchEvent::Tap:
+    case TouchEvent::Tap: {
+      // On Home, a tap on the top-right stats strip jumps to that page.
+      int16_t tx = 0, ty = 0;
+      if (pages.currentIndex() == ScreenHome && touch.tapPoint(tx, ty)) {
+        const int dest = homePage.tapTarget(tx, ty);
+        if (dest >= 0) {
+          pages.show(static_cast<size_t>(dest));
+          break;
+        }
+      }
       pages.tap();
       break;
+    }
     case TouchEvent::LongPress:
       openWifiSetup("Wi-Fi setup");
       break;
@@ -223,9 +233,19 @@ void loop() {
                              settings.screenOn(ScreenStatus);
     if (wantWeather) weather::update(settings);
     if (weather::takeChanged()) pages.dataChanged();
-    if (settings.screenOn(ScreenBadge)) wdg::update(settings);
-    if (settings.screenOn(ScreenWigle)) wigle::update(settings);
-    if (settings.screenOn(ScreenWardrift)) wardrift::update(settings);
+    // Home's strip uses one chosen source; keep fetching it even if that
+    // source's own page is switched off.
+    const HomeStripSource strip = settings.stripSource();
+    const bool homeOn = settings.screenOn(ScreenHome);
+    if ((homeOn && strip == HomeStripSource::Wdg) || settings.screenOn(ScreenBadge)) {
+      wdg::update(settings);
+    }
+    if ((homeOn && strip == HomeStripSource::Wigle) || settings.screenOn(ScreenWigle)) {
+      wigle::update(settings);
+    }
+    if ((homeOn && strip == HomeStripSource::Wardrift) || settings.screenOn(ScreenWardrift)) {
+      wardrift::update(settings);
+    }
     if (settings.screenOn(ScreenStars) || settings.screenOn(ScreenRepos)) github::update(settings);
   } else if (weather::takeChanged()) {
     pages.dataChanged();

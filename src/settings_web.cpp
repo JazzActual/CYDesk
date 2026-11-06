@@ -6,6 +6,7 @@
 #include <WiFi.h>
 
 #include "github_service.h"
+#include "home_strip.h"
 #include "ota.h"
 #include "theme.h"
 
@@ -115,6 +116,9 @@ const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
    border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px;color-scheme:dark}
  .units label{display:inline;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin-right:18px}
  .screens label{display:block;text-transform:none;letter-spacing:0;color:#e6edf3;font-size:16px;margin:8px 0}
+ select{width:100%;box-sizing:border-box;background:#0f2531;color:#e6edf3;
+   border:1px solid #1d3a4a;border-radius:8px;padding:10px;font-size:16px}
+ select:focus{border-color:var(--accent,#00e5ff);outline:none}
  .hint{color:#5d7b8c;font-size:12px;margin-top:4px}
  .color-row{display:flex;align-items:center;gap:12px}
  input[type=color]{width:72px;height:42px;padding:3px;background:#0f2531;border:1px solid #1d3a4a;border-radius:8px}
@@ -126,7 +130,8 @@ const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
 </style></head><body>
 )HTML";
 
-// Updates the page as the picker moves, before Save is pressed.
+// Updates the page as the picker moves, before Save is pressed. Also keeps
+// the Home-strip field menus in sync with the chosen source.
 const char PAGE_SCRIPT[] PROGMEM = R"HTML(<script>
 (function(){
   var picker=document.getElementById('accent');
@@ -148,6 +153,36 @@ const char PAGE_SCRIPT[] PROGMEM = R"HTML(<script>
   }
   picker.addEventListener('input', apply);
   apply();
+
+  var fields=window.CYDESK_STRIP_FIELDS||{};
+  var sourceRadios=document.querySelectorAll('input[name=hstripsrc]');
+  var lineSelects=[0,1,2].map(function(i){return document.getElementById('hstrip'+i);});
+  var linesBox=document.getElementById('hstrip-lines');
+  function selectedSource(){
+    for(var i=0;i<sourceRadios.length;i++){if(sourceRadios[i].checked) return sourceRadios[i].value;}
+    return '0';
+  }
+  function refill(keepValues){
+    var src=selectedSource();
+    var on=src!=='0';
+    if(linesBox) linesBox.style.display=on?'block':'none';
+    var list=fields[src]||[];
+    lineSelects.forEach(function(sel, idx){
+      if(!sel) return;
+      var fallback=String(list.length?Math.min(idx, list.length-1):0);
+      var want=keepValues ? (sel.getAttribute('data-current')||fallback) : fallback;
+      sel.innerHTML='';
+      list.forEach(function(pair){
+        var o=document.createElement('option');
+        o.value=pair[0]; o.textContent=pair[1];
+        if(pair[0]===want) o.selected=true;
+        sel.appendChild(o);
+      });
+      if(sel.options.length && sel.selectedIndex<0) sel.selectedIndex=Math.min(idx, sel.options.length-1);
+    });
+  }
+  sourceRadios.forEach(function(r){r.addEventListener('change', function(){refill(false);});});
+  refill(true);
 })();
 </script>)HTML";
 
@@ -157,7 +192,7 @@ void handleRoot() {
   const bool checking = s.isComplete() && s.placeLabel.isEmpty() && placeError->isEmpty();
 
   String html;
-  html.reserve(12000);
+  html.reserve(16000);
   html += FPSTR(PAGE_HEAD);
   // The saved color, so the first paint matches the desk buddy before the
   // script runs. Dragging the picker updates the same variables live.
@@ -202,6 +237,44 @@ void handleRoot() {
   }
   html += "</div><div class='hint'>A tap skips any screen that is off. "
           "Status always stays on. Home stays on if every other box is cleared.</div>";
+
+  // Home strip: one source, three fields. Field menus are filled by the script.
+  html += "<label>Home strip</label><div class='units'>";
+  const uint8_t stripSrc = s.homeStripSource;
+  auto stripRadio = [&](uint8_t value, const char* label) {
+    html += String("<label><input type='radio' name='hstripsrc' value='") + value + "'";
+    if (stripSrc == value) html += " checked";
+    html += "> " + String(label) + "</label>";
+  };
+  stripRadio(static_cast<uint8_t>(HomeStripSource::Off), "Off");
+  stripRadio(static_cast<uint8_t>(HomeStripSource::Wdg), "WDGWars");
+  stripRadio(static_cast<uint8_t>(HomeStripSource::Wigle), "WiGLE");
+  stripRadio(static_cast<uint8_t>(HomeStripSource::Wardrift), "Wardrift");
+  html += "</div>";
+  html += "<div id='hstrip-lines'" +
+          String(stripSrc == static_cast<uint8_t>(HomeStripSource::Off) ? " style='display:none'" : "") +
+          ">";
+  for (int i = 0; i < home_strip::LINES; i++) {
+    html += "<label for='hstrip" + String(i) + "'>Line " + String(i + 1) + "</label>"
+            "<select id='hstrip" + String(i) + "' name='hstrip" + String(i) + "' data-current='" +
+            String(s.homeStripField[i]) + "'></select>";
+  }
+  html += "</div><div class='hint'>Three numbers from one account, top-right on Home. "
+          "A tap on the strip opens that account's page.</div>";
+  // Field lists for the script: { "1": [["0","Total"], ...], "2": [...], ... }
+  html += "<script>window.CYDESK_STRIP_FIELDS={";
+  for (uint8_t src = 1; src <= static_cast<uint8_t>(HomeStripSource::Wardrift); src++) {
+    if (src > 1) html += ",";
+    html += "\"" + String(src) + "\":[";
+    const auto source = static_cast<HomeStripSource>(src);
+    const uint8_t n = home_strip::fieldCount(source);
+    for (uint8_t f = 0; f < n; f++) {
+      if (f) html += ",";
+      html += "[\"" + String(f) + "\",\"" + escapeHtml(home_strip::fieldTitle(source, f)) + "\"]";
+    }
+    html += "]";
+  }
+  html += "};</script>";
 
   html += "<label for='name'>Your name (for the greeting)</label>"
           "<input type='text' id='name' name='name' maxlength='20' value='" +
@@ -454,6 +527,11 @@ void handleSave() {
   }
   if ((screens & ~(1u << ScreenStatus)) == 0) screens |= 1u << ScreenHome;
   s.screens = screens;
+  s.homeStripSource = static_cast<uint8_t>(server.arg("hstripsrc").toInt());
+  for (int i = 0; i < home_strip::LINES; i++) {
+    s.homeStripField[i] = static_cast<uint8_t>(server.arg("hstrip" + String(i)).toInt());
+  }
+  home_strip::clamp(s);
   theme::setAccent(s.accent);
   s.save();
   changed = true;
@@ -467,7 +545,8 @@ void handleSave() {
                 clockTime(s.wigleMinute).c_str(),
                 (s.wardriftUser.length() && s.wardriftPass.length()) ? "set" : "none",
                 s.petAnimal, s.petMode, hexColor(s.accent).c_str());
-  Serial.printf("[web] screens: %02x\n", s.screens);
+  Serial.printf("[web] screens: %02x  home-strip: src=%u fields=%u/%u/%u\n", s.screens,
+                s.homeStripSource, s.homeStripField[0], s.homeStripField[1], s.homeStripField[2]);
 
   // "Post/Redirect/Get": send the browser back to the page, so a refresh
   // doesn't submit the form twice.

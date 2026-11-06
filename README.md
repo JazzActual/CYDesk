@@ -17,35 +17,63 @@ Open the installer in **Chrome, Edge, or Firefox** on a computer (not a phone, a
 
 **[https://jazzactual.github.io/CYDesk/](https://jazzactual.github.io/CYDesk/)**
 
-The same page installs a blank board and updates one that already runs CYDesk.
-
 1. Plug the board in with a **data** USB cable. A charge-only cable will not show a port.
 2. These boards use a **CH340** USB chip. Windows and Mac need the driver from [WCH](https://github.com/WCH-IC/download/releases/tag/CH341) before a port appears. Run `CH341SER.EXE` on Windows, or install `CH341SER_MAC.ZIP` on a Mac (allow it under System Settings → Privacy & Security if macOS asks). Linux already has the driver. Unplug the board and plug it back in after installing.
 3. On the installer page, pick the size printed on the back of the board from the list, then **Install or update**. The port is usually named USB Serial, `usbserial`, or `wchusbserial`.
-4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys. An update with erase off keeps them.
+4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys.
 
 Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.
 
-### Update over Wi‑Fi (no laptop flash)
+## Updating firmware
 
-After the board is on your home Wi‑Fi and running a build that includes the update UI:
+Three ways to get a new build onto a board that already runs CYDesk. Prefer the first that fits; USB and espota are backups if Wi‑Fi update fails.
 
-1. Open **http://cydesk.local** (or the IP on Status).
+### Prerequisites
+
+- The desk must already be on a recent CYDesk image with **two OTA app slots** (`min_spiffs` partition table). Older “huge app / no OTA” builds need **one USB Install or update first** (Erase **unchecked**) so the partition table migrates. After that, in-app and espota work.
+- Pick the **matching board size** (2.8 / 3.5 R / 4.0 R). Wrong size will not brick the board; the picture will look wrong until you flash the right one.
+- Settings and status live at **http://cydesk.local** once the desk is on your 2.4 GHz Wi‑Fi (or use the IP shown on Status / the setup QR). Two boards on the same LAN both answer `cydesk.local` — use the IP if that happens.
+
+### 1. Web flasher over USB
+
+Same page as first install: [https://jazzactual.github.io/CYDesk/](https://jazzactual.github.io/CYDesk/)
+
+1. Plug in a **data** USB cable; use Chrome, Edge, or Firefox on a computer.
+2. Choose your board size → **Install or update** → pick the serial port.
+3. **Erase device unchecked** — updates firmware and **keeps** saved Wi‑Fi and API keys. Use this for normal upgrades and for the one-time partition migrate.
+4. **Erase device checked** — full wipe. Use only when you want a blank board (clears Wi‑Fi and keys). You’ll go through the `CYDesk` portal and settings again afterward.
+
+### 2. In-app update (Settings → Firmware)
+
+No laptop after the desk is on Wi‑Fi and running a build that includes the Firmware UI.
+
+1. Open **http://cydesk.local** (or the IP).
 2. Scroll to **Firmware** → **Check for updates**.
-3. If a newer build is listed, **Update now**. Watch the desk for progress; it reboots when done. Keep power on.
+3. If a newer build is listed, **Update now** (or cancel). Watch the desk for progress; keep power on. It reboots when finished.
 
-The board pulls `channel.json` + `app.bin` for its size (2.8 / 3.5 R / 4.0 R) from the same GitHub Pages site as the USB installer. The first time you move from an older "no OTA" image, use the USB installer once (erase still off) so the partition table gains a second app slot.
+The board fetches its variant from the published channel on GitHub Pages (same site as the installer), for example:
 
-**Backups still work**
+- 2.8″ — `https://jazzactual.github.io/CYDesk/cyd28/channel.json` → `app.bin`
+- 3.5″ R — `…/cyd35/channel.json`
+- 4.0″ R — `…/cyd40/channel.json`
 
-- USB installer with Erase unchecked (keeps Wi‑Fi and keys).
-- PlatformIO espota from a computer on the same Wi‑Fi:
+Status shows the build id and whether an update is ready. If Check fails (offline channel, wrong board in the JSON, no Wi‑Fi), use USB or espota below.
+
+### 3. PlatformIO espota (laptop on the same Wi‑Fi)
+
+From a machine that can build the project, push over the network. Password is **`cydesk`**. Use the env that matches the panel:
 
 ```
 pio run -e e32r28t -t upload --upload-protocol espota --upload-port cydesk.local --upload-flags --auth=cydesk
 ```
 
-Password is `cydesk`. Use `-e cyd35` or `-e cyd40` for those boards.
+Use `-e cyd35` or `-e cyd40` for those boards. If `cydesk.local` does not resolve, pass the desk’s IP as `--upload-port` instead.
+
+### Caveats
+
+- In-app Check needs the channel live on Pages (published when `flasher/` lands on `main`).
+- TLS for weather and the update channel uses the same relaxed HTTPS trust as the rest of CYDesk; treat updates like any other LAN/settings access.
+- Capacitive panels, E32N40T, and Guition 4848S040 are not supported builds.
 
 ## Pages
 
