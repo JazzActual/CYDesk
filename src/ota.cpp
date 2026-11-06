@@ -34,6 +34,8 @@ int remoteSize = 0;
 constexpr const char* BOARD_ID = "cyd40";
 #elif defined(BOARD_CYD35)
 constexpr const char* BOARD_ID = "cyd35";
+#elif defined(BOARD_NICEMCU28)
+constexpr const char* BOARD_ID = "nicemcu28";
 #else
 constexpr const char* BOARD_ID = "cyd28";
 #endif

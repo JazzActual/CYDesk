@@ -159,8 +159,10 @@ void setup() {
   Serial.println("\nCYDesk: 4.0 inch resistive (E32R40T)");
 #elif defined(BOARD_CYD35)
   Serial.println("\nCYDesk: 3.5 inch resistive");
+#elif defined(BOARD_NICEMCU28)
+  Serial.println("\nCYDesk: 2.8 inch capacitive (NiceMCU-32S-DEV_2.8IPS)");
 #else
-  Serial.println("\nCYDesk: 2.8 inch");
+  Serial.println("\nCYDesk: 2.8 inch resistive");
 #endif
 
   tft.init();

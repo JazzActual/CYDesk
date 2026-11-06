@@ -1,0 +1,8 @@
+{
+  "name": "CYDesk 2.8 C",
+  "board": "nicemcu28",
+  "version": "202611061957",
+  "app": "app.bin",
+  "size": 1384624,
+  "sha256": "0393db2fd94b713c4bac3c2d5a518c6f67d06aec79716feb9258af71a7816a7f"
+}

@@ -22,7 +22,8 @@ class TouchInput {
   static constexpr uint32_t MAX_TAP_MS = 800;
 
   // `display` is the screen already started with tft.init(). The 3.5" / 4.0"
-  // boards read the touch chip through that same connection.
+  // resistive boards read the touch chip through that same connection. The
+  // NiceMCU 2.8" capacitive board uses CST816D over I2C instead.
   void begin(TFT_eSPI& display);
 
   // Call every loop(). Returns at most one event per press.

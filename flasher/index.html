@@ -111,14 +111,15 @@
   <h2>Board</h2>
   <label class="board-label" for="board">Which board are you flashing?</label>
   <select id="board" aria-describedby="board-hint">
-    <option value="cyd28/manifest.json" data-label="2.8 inch" data-hint="E32R28T / ESP32-2432S028. 240×320.">2.8 inch — E32R28T / ESP32-2432S028</option>
+    <option value="cyd28/manifest.json" data-label="2.8 inch R" data-hint="E32R28T / ESP32-2432S028. ILI9341, resistive XPT2046. 240×320. Not the NiceMCU capacitive board.">2.8 inch R — E32R28T / ESP32-2432S028</option>
+    <option value="nicemcu28/manifest.json" data-label="2.8 inch C" data-hint="NiceMCU-32S-DEV_2.8IPS. ST7789, capacitive CST816D. 240×320. Not the resistive E32R28T.">2.8 inch C — NiceMCU-32S-DEV_2.8IPS</option>
     <option value="cyd35/manifest.json" data-label="3.5 inch R" data-hint="ESP32-3248S035R (resistive). 320×480. Not the capacitive board ending in C.">3.5 inch R — ESP32-3248S035R</option>
     <option value="cyd40/manifest.json" data-label="4.0 inch R" data-hint="E32R40T / ESP32-32E. 320×480 ST7796, resistive touch. Not E32N40T, not capacitive 4&quot;, not Guition 4848S040.">4.0 inch R — E32R40T / ESP32-32E</option>
   </select>
-  <p class="hint" id="board-hint">E32R28T / ESP32-2432S028. 240×320.</p>
+  <p class="hint" id="board-hint">E32R28T / ESP32-2432S028. ILI9341, resistive XPT2046. 240×320. Not the NiceMCU capacitive board.</p>
 
   <esp-web-install-button id="install" manifest="cyd28/manifest.json">
-    <button slot="activate" id="install-label">Install or update 2.8 inch</button>
+    <button slot="activate" id="install-label">Install or update 2.8 inch R</button>
     <span slot="unsupported">This browser can't install to the board. Use Chrome, Edge, or Firefox on a computer.</span>
     <span slot="not-allowed">This page was opened as a file, so the browser won't allow USB. Serve the folder and open <code>http://localhost:8000</code>.</span>
   </esp-web-install-button>
@@ -126,7 +127,7 @@
   <div class="note">
     <p>Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.</p>
     <p>After this firmware is on the board and it is on your Wi-Fi, open <code>http://cydesk.local</code> → <strong>Firmware</strong> → <strong>Check for updates</strong> to pull a newer build without a cable. PlatformIO <code>espota</code> still works as a backup.</p>
-    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" file. <code>pio run -e cyd35</code> and <code>pio run -e cyd40</code> rebuild the taller boards.</p>
+    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" R file. <code>pio run -e nicemcu28</code> rebuilds the 2.8" capacitive NiceMCU image. <code>pio run -e cyd35</code> and <code>pio run -e cyd40</code> rebuild the taller boards.</p>
   </div>
 </main>
 <script>
