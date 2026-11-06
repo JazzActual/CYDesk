@@ -37,10 +37,14 @@ def stage_flasher(source, target, env):
     # One folder per board. All of these chips are plain ESP32, so the
     # installer page has to ask which size rather than guessing from the chip.
     pioenv = env["PIOENV"]
-    if pioenv == "cyd40":
+    if pioenv == "cyd40c":
+        folder, name = "cyd40c", "CYDesk 4.0 C"
+    elif pioenv == "cyd40":
         folder, name = "cyd40", "CYDesk 4.0 R"
+    elif pioenv == "cyd35c":
+        folder, name = "cyd35c", "CYDesk 3.5 C"
     elif pioenv == "cyd35":
-        folder, name = "cyd35", "CYDesk 3.5"
+        folder, name = "cyd35", "CYDesk 3.5 R"
     elif pioenv == "nicemcu28":
         folder, name = "nicemcu28", "CYDesk 2.8 C"
     else:

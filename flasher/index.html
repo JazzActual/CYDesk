@@ -114,7 +114,9 @@
     <option value="cyd28/manifest.json" data-label="2.8 inch R" data-hint="E32R28T / ESP32-2432S028. ILI9341, resistive XPT2046. 240×320. Not the NiceMCU capacitive board.">2.8 inch R — E32R28T / ESP32-2432S028</option>
     <option value="nicemcu28/manifest.json" data-label="2.8 inch C" data-hint="NiceMCU-32S-DEV_2.8IPS. ST7789, capacitive CST816D. 240×320. Not the resistive E32R28T.">2.8 inch C — NiceMCU-32S-DEV_2.8IPS</option>
     <option value="cyd35/manifest.json" data-label="3.5 inch R" data-hint="ESP32-3248S035R (resistive). 320×480. Not the capacitive board ending in C.">3.5 inch R — ESP32-3248S035R</option>
+    <option value="cyd35c/manifest.json" data-label="3.5 inch C" data-hint="ESP32-3248S035C (capacitive GT911). 320×480 ST7796. Not the resistive R board, not Guition 4848S040.">3.5 inch C — ESP32-3248S035C</option>
     <option value="cyd40/manifest.json" data-label="4.0 inch R" data-hint="E32R40T / ESP32-32E. 320×480 ST7796, resistive touch. Not E32N40T, not capacitive 4&quot;, not Guition 4848S040.">4.0 inch R — E32R40T / ESP32-32E</option>
+    <option value="cyd40c/manifest.json" data-label="4.0 inch C" data-hint="Classic ESP32 4.0&quot; ST7796 + GT911 (same touch pins as 3.5 C). Not E32N40T, not Guition 4848S040 (ESP32-S3).">4.0 inch C — ST7796 + GT911</option>
   </select>
   <p class="hint" id="board-hint">E32R28T / ESP32-2432S028. ILI9341, resistive XPT2046. 240×320. Not the NiceMCU capacitive board.</p>
 
@@ -127,7 +129,7 @@
   <div class="note">
     <p>Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.</p>
     <p>After this firmware is on the board and it is on your Wi-Fi, open <code>http://cydesk.local</code> → <strong>Firmware</strong> → <strong>Check for updates</strong> to pull a newer build without a cable. PlatformIO <code>espota</code> still works as a backup.</p>
-    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" R file. <code>pio run -e nicemcu28</code> rebuilds the 2.8" capacitive NiceMCU image. <code>pio run -e cyd35</code> and <code>pio run -e cyd40</code> rebuild the taller boards.</p>
+    <p class="hint">To open this page on your own computer, in the <code>flasher</code> folder run <code>python3 -m http.server</code> and visit <code>http://localhost:8000</code>. <code>pio run</code> rebuilds the 2.8" R file. <code>pio run -e nicemcu28</code> rebuilds the 2.8" capacitive NiceMCU image. <code>pio run -e cyd35</code> / <code>-e cyd35c</code> and <code>pio run -e cyd40</code> / <code>-e cyd40c</code> rebuild the taller boards.</p>
   </div>
 </main>
 <script>

@@ -2,7 +2,7 @@
 // published channel on GitHub Pages.
 //
 // Channel (per board folder next to the web installer):
-//   https://jazzactual.github.io/CYDesk/<cyd28|nicemcu28|cyd35|cyd40>/channel.json
+//   https://jazzactual.github.io/CYDesk/<cyd28|nicemcu28|cyd35|cyd35c|cyd40|cyd40c>/channel.json
 // points at app.bin for that variant. The board compares CYDESK_FW_VERSION
 // (UTC YYYYMMDDHHMM baked at build) to the channel's "version" field.
 //
@@ -51,7 +51,7 @@ const char* version();
 // Human stamp for Status ("Nov  6 2026").
 const char* buildStamp();
 
-// Board folder on the channel: cyd28 / nicemcu28 / cyd35 / cyd40.
+// Board folder on the channel: cyd28 / nicemcu28 / cyd35 / cyd35c / cyd40 / cyd40c.
 const char* boardId();
 
 // Optional TFT for the full-screen progress UI during apply.
