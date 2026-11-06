@@ -79,7 +79,7 @@ Use `-e cyd35` or `-e cyd40` for those boards. If `cydesk.local` does not resolv
 
 Tap anywhere to go to the next one. It wraps around. After a page has been up for 30 seconds, a tap returns to Home. On Home, a tap still moves on. On the settings page, uncheck a screen to skip it. Status always stays in the cycle. If every other box is cleared, Home stays on.
 
-1. **Home.** Greeting, date, and clock. The greeting follows the hour: morning, afternoon, evening, or "Up late". Sunrise and sunset sit above the weather, in time order, with the next one bright and the one that already passed muted. Temperature, the chance of rain, humidity, and a weather icon. By day the sun is drawn for clear and partly cloudy. At night every icon uses the moon phase from the forecast. The desk pet sits in the bottom-left corner.
+1. **Home.** Greeting, date, and clock. The greeting follows the hour: morning, afternoon, evening, or "Up late". Sunrise and sunset sit above the weather, in time order, with the next one bright and the one that already passed muted. Temperature, the chance of rain, humidity, and a weather icon. By day the sun is drawn for clear and partly cloudy. At night every icon uses the moon phase from the forecast. The desk pet sits in the bottom-left corner. An optional three-line stats strip can sit top-right once you turn it on in settings (Off by default); pick one account (WDGWars, WiGLE, or Wardrift) and three of its numbers. A tap on the strip opens that account's page.
 
    ![Home](docs/screens/home.png)
 
@@ -143,12 +143,14 @@ Served by the board at `http://cydesk.local` once it is on your Wi-Fi.
 
 - Accent color. Default cyan. It replaces the highlights on the desk and on this page as you move the picker. Pink stays for errors, the umbrella, and the sunset arrow.
 - Which screens a tap visits.
+- Home strip. Off until you pick WDGWars, WiGLE, or Wardrift, then choose which three metrics from that account show top-right on Home.
 - Name, ZIP code, and WeatherAPI key. °F or °C. 12-hour or 24-hour clock. The clock's offset comes from the weather location, including daylight saving.
 - WDGWars key.
 - WiGLE API name, token, and the time of day to check.
 - Wardrift username and password.
 - Up to four public GitHub repos, one per line.
 - Desk pet mode and animal.
+- Firmware. Build id, **Check for updates** against the published channel for this board size, and a short note on USB / espota backups (see [Updating firmware](#updating-firmware)).
 
 Weather refreshes about every 15 minutes and covers the current conditions, sunrise and sunset, and the hourly page in one request.
 
