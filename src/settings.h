@@ -62,9 +62,10 @@ struct Settings {
   }
 
   // Home top-right strip: one source, three fields from that source's metrics.
-  // Defaults to off so the greeting keeps the full width until configured.
+  // Always starts Off (no strip) until the user picks WiGLE / WDGWars /
+  // Wardrift on the settings page. Missing NVS key "hstrip" also means Off.
   uint8_t homeStripSource = static_cast<uint8_t>(HomeStripSource::Off);
-  uint8_t homeStripField[3] = {0, 1, 2};
+  uint8_t homeStripField[3] = {0, 0, 0};
   HomeStripSource stripSource() const {
     return static_cast<HomeStripSource>(homeStripSource);
   }

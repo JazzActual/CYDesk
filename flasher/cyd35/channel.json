@@ -1,8 +1,8 @@
 {
   "name": "CYDesk 3.5",
   "board": "cyd35",
-  "version": "202611061344",
+  "version": "202611061351",
   "app": "app.bin",
-  "size": 1366272,
-  "sha256": "757a0f2fb84c36e9eba12900e75b5badbd6a618d484377b19a12ef9413f82659"
+  "size": 1366704,
+  "sha256": "274a458367a07b05afc891b8da77961acecd48ab33ec61ae5d8ab5aa555f8445"
 }

@@ -1,5 +1,6 @@
 // Home top-right strip: three lines from one stats source (WDGWars, WiGLE, or
-// Wardrift). The source and each line's field are saved in Settings.
+// Wardrift). Off until the user picks a source on the settings page; the
+// source and each line's field are saved in Settings.
 #pragma once
 #include <Arduino.h>
 
