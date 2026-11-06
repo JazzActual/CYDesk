@@ -19,7 +19,7 @@ Open the installer in **Chrome, Edge, or Firefox** on a computer (not a phone, a
 
 1. Plug the board in with a **data** USB cable. A charge-only cable will not show a port.
 2. These boards use a **CH340** USB chip. Windows and Mac need the driver from [WCH](https://github.com/WCH-IC/download/releases/tag/CH341) before a port appears. Run `CH341SER.EXE` on Windows, or install `CH341SER_MAC.ZIP` on a Mac (allow it under System Settings → Privacy & Security if macOS asks). Linux already has the driver. Unplug the board and plug it back in after installing.
-3. On the installer page, click the button for the size printed on the back of the board. The port is usually named USB Serial, `usbserial`, or `wchusbserial`.
+3. On the installer page, pick the size printed on the back of the board from the list, then Install. The port is usually named USB Serial, `usbserial`, or `wchusbserial`.
 4. Leave **Erase device** unchecked unless you want a blank board. Erase clears the saved Wi-Fi and keys.
 
 Installing the wrong size will not damage the board. The picture will look wrong until you install the matching one.
@@ -103,7 +103,7 @@ Weather refreshes about every 15 minutes and covers the current conditions, sunr
 
 ## Boards
 
-| Size | Board | Screen | Install button |
+| Size | Board | Screen | Flasher choice |
 | --- | --- | --- | --- |
 | 2.8" | E32R28T / ESP32-2432S028 | 240×320, ILI9341 | 2.8 inch |
 | 3.5" resistive | ESP32-3248S035**R** | 320×480, ST7796 | 3.5 inch R |
