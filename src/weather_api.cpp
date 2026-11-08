@@ -6,6 +6,8 @@
 #include <WiFiClientSecure.h>
 #include <math.h>
 
+#include "location.h"
+
 namespace {
 constexpr const char* API_BASE = "https://api.weatherapi.com/v1";
 constexpr uint32_t HTTP_TIMEOUT_MS = 8000;
@@ -18,7 +20,7 @@ String describeApiError(int code, const String& message) {
     case 2007: return "Monthly call limit reached";
     case 2008: return "API key disabled";
     case 2009: return "Key's plan can't use this";
-    case 1006: return "ZIP code not found";
+    case 1006: return "Location not found";
     default:   return message.length() ? message : String("Weather error ") + code;
   }
 }
@@ -112,7 +114,7 @@ int WeatherReport::precipChanceAt(time_t when) const {
   return -1;
 }
 
-WeatherReport fetchWeather(const Settings& settings) {
+WeatherReport fetchWeather(const Settings& settings, const String& query) {
   WeatherReport result;
   if (WiFi.status() != WL_CONNECTED) {
     result.error = "No Wi-Fi";
@@ -141,7 +143,7 @@ WeatherReport fetchWeather(const Settings& settings) {
   // forecast.json with 2 days: current conditions, the place and its local
   // time, sunrise/sunset and today's moon phase, and 48 hourly forecasts.
   const String url = String(API_BASE) + "/forecast.json?key=" + settings.weatherKey +
-                     "&q=" + settings.zip + "&days=2&aqi=no&alerts=no";
+                     "&q=" + location::urlEncode(query) + "&days=2&aqi=no&alerts=no";
   if (!http.begin(tls, url)) {
     result.error = "Couldn't start request";
     return result;

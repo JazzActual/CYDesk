@@ -15,6 +15,11 @@ void Settings::load() {
   prefs.begin(NVS_NAMESPACE, /*readOnly=*/true);
   name       = prefs.getString("name", "");
   zip        = prefs.getString("zip", "");
+  // Saved before countries existed = a US ZIP.
+  country    = prefs.isKey("country") ? prefs.getString("country", "US") : "US";
+  if (country.length() != 2) country = "US";
+  geoQuery   = prefs.isKey("geoq") ? prefs.getString("geoq", "") : "";
+  geoFor     = prefs.isKey("geofor") ? prefs.getString("geofor", "") : "";
   weatherKey = prefs.getString("wkey", "");
   // isKey first: getString logs an error when the key has never been saved.
   wdgKey     = prefs.isKey("wdgkey") ? prefs.getString("wdgkey", "") : "";
@@ -33,6 +38,11 @@ void Settings::load() {
   accent     = prefs.isKey("accent") ? prefs.getUInt("accent", theme::DEFAULT_ACCENT)
                                      : theme::DEFAULT_ACCENT;
   accent &= 0xFFFFFFu;
+  ledOn = prefs.isKey("ledon") ? prefs.getBool("ledon", false) : false;
+  ledColor = prefs.isKey("ledcolor") ? prefs.getUInt("ledcolor", 0x00E5FFu) : 0x00E5FFu;
+  ledColor &= 0xFFFFFFu;
+  ledBrightness = prefs.isKey("ledbright") ? prefs.getUChar("ledbright", 40) : 40;
+  if (ledBrightness < 1 || ledBrightness > 100) ledBrightness = 40;
   screens = prefs.isKey("screens") ? prefs.getUChar("screens", SCREENS_ALL) : SCREENS_ALL;
   screens &= SCREENS_ALL;
   // The build before Repos stored "all on" as 0x7F, with Status in bit 6.
@@ -77,6 +87,9 @@ void Settings::save() const {
   prefs.begin(NVS_NAMESPACE, /*readOnly=*/false);
   prefs.putString("name", name);
   prefs.putString("zip", zip);
+  prefs.putString("country", country);
+  prefs.putString("geoq", geoQuery);
+  prefs.putString("geofor", geoFor);
   prefs.putString("wkey", weatherKey);
   prefs.remove("badge");  // image addresses are no longer used
   prefs.putString("wdgkey", wdgKey);
@@ -94,6 +107,9 @@ void Settings::save() const {
   prefs.putUChar("petmode", petMode);
   prefs.putUChar("screens", screens);
   prefs.putUInt("accent", accent & 0xFFFFFFu);
+  prefs.putBool("ledon", ledOn);
+  prefs.putUInt("ledcolor", ledColor & 0xFFFFFFu);
+  prefs.putUChar("ledbright", ledBrightness);
   const uint32_t strip = static_cast<uint32_t>(homeStripSource) |
                          (static_cast<uint32_t>(homeStripField[0]) << 8) |
                          (static_cast<uint32_t>(homeStripField[1]) << 16) |
