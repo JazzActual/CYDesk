@@ -1,8 +1,8 @@
 {
   "name": "CYDesk 4.0 R",
   "board": "cyd40",
-  "version": "202611061420",
+  "version": "202611091504",
   "app": "app.bin",
-  "size": 1366704,
-  "sha256": "993873e7ce324de10d0023aeaf5af6c35af8ac718fdf8060031b1c16f026e9e6"
+  "size": 1392176,
+  "sha256": "9a3147f85793b26c6042590657ffb668300b14381d827db851c7cedfefe68bbf"
 }
