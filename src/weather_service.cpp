@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 
+#include "location.h"
 #include "timekeeping.h"
 
 namespace weather {
@@ -12,11 +13,16 @@ bool changed = false;
 bool fetchedOnce = false;
 bool soon = true;          // fetch at the first chance after boot
 uint32_t lastAttempt = 0;
+// The "country:code" the postal-code lookup said it doesn't know. No more
+// lookups for it until the settings change (refreshSoon), so a typo doesn't
+// ask the lookup service once a minute forever.
+String unknownPlace;
 }  // namespace
 
 void refreshSoon() {
   soon = true;
   error = "";
+  unknownPlace = "";
 }
 
 void update(Settings& settings) {
@@ -24,13 +30,26 @@ void update(Settings& settings) {
 
   const uint32_t wait = error.length() ? RETRY_MS : REFRESH_MS;
   if (!soon && fetchedOnce && millis() - lastAttempt < wait) return;
+  if (unknownPlace.length() && unknownPlace == location::cacheKey(settings)) return;
 
   soon = false;
   fetchedOnce = true;
   lastAttempt = millis();
-  Serial.println("[weather] fetching...");
 
-  WeatherReport fresh = fetchWeather(settings);
+  // Postal code -> something WeatherAPI reads (looked up once, then saved).
+  String query;
+  String placeError;
+  const location::Result where = location::resolve(settings, query, placeError);
+  if (where != location::Result::Ok) {
+    changed = true;
+    error = placeError;
+    if (where == location::Result::NotFound) unknownPlace = location::cacheKey(settings);
+    Serial.printf("[weather] location: %s\n", error.c_str());
+    return;
+  }
+
+  Serial.println("[weather] fetching...");
+  WeatherReport fresh = fetchWeather(settings, query);
   changed = true;
   if (!fresh.ok) {
     error = fresh.error;

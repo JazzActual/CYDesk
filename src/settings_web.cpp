@@ -7,7 +7,9 @@
 
 #include "github_service.h"
 #include "home_strip.h"
+#include "location.h"
 #include "ota.h"
+#include "rgb_led.h"
 #include "theme.h"
 
 namespace settings_web {
@@ -127,6 +129,11 @@ const char PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
  .status{background:#0f2531;border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.6}
  .ok{color:var(--accent,#00e5ff)}.bad{color:#ff2d95}.wait{color:#5d7b8c}
  a{color:var(--accent,#00e5ff)}
+ input[type=range]{flex:1;min-width:0}
+ .swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+ .swatches button{margin:0;width:34px;height:34px;padding:0;border-radius:50%;border:2px solid #1d3a4a}
+ .swatches button.text{width:auto;border-radius:8px;padding:0 12px;font-size:14px;font-weight:500;
+   background:#0f2531;color:#e6edf3}
 </style></head><body>
 )HTML";
 
@@ -186,13 +193,61 @@ const char PAGE_SCRIPT[] PROGMEM = R"HTML(<script>
 })();
 </script>)HTML";
 
+// Postal code box hint follows the chosen country. The LED controls send a
+// preview to the desk while they move (not saved until Save is pressed).
+const char PAGE_SCRIPT_2[] PROGMEM = R"HTML(<script>
+(function(){
+  var country=document.getElementById('country');
+  var zip=document.getElementById('zip');
+  var zipLabel=document.getElementById('zip-label');
+  function hint(){
+    var o=country.options[country.selectedIndex];
+    zip.placeholder='e.g. '+(o.getAttribute('data-ex')||'');
+    var other=country.value==='ZZ';
+    zipLabel.textContent=other?'City name or lat,lon (for weather)':'Postal code (for weather)';
+    zip.setAttribute('inputmode', country.value==='US'?'numeric':'text');
+  }
+  if(country&&zip){country.addEventListener('change', hint); hint();}
+
+  var on=document.getElementById('ledon');
+  var color=document.getElementById('ledcolor');
+  var bright=document.getElementById('ledbright');
+  var brightOut=document.getElementById('ledbright-out');
+  var colorOut=document.getElementById('ledcolor-hex');
+  if(!on||!color||!bright) return;
+  var timer=null, busy=false, again=false;
+  function send(){
+    if(busy){again=true;return;}
+    busy=true;
+    var body='on='+(on.checked?1:0)+'&color='+encodeURIComponent(color.value)+'&bright='+bright.value;
+    fetch('/led',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .catch(function(){}).then(function(){busy=false; if(again){again=false; send();}});
+  }
+  function changed(){
+    brightOut.textContent=bright.value+'%';
+    colorOut.textContent=color.value.toUpperCase();
+    clearTimeout(timer); timer=setTimeout(send, 60);
+  }
+  colorOut.textContent=color.value.toUpperCase();
+  [on,color,bright].forEach(function(el){el.addEventListener('input', changed); el.addEventListener('change', changed);});
+  document.querySelectorAll('.swatches button').forEach(function(b){
+    b.addEventListener('click', function(e){
+      e.preventDefault();
+      var v=b.getAttribute('data-color');
+      if(v==='accent') v=document.getElementById('accent').value;
+      color.value=v; on.checked=true; changed();
+    });
+  });
+})();
+</script>)HTML";
+
 void handleRoot() {
   const Settings& s = *settings;
   const bool justSaved = server.hasArg("saved");
   const bool checking = s.isComplete() && s.placeLabel.isEmpty() && placeError->isEmpty();
 
   String html;
-  html.reserve(16000);
+  html.reserve(24000);  // country list + LED controls made the page bigger
   html += FPSTR(PAGE_HEAD);
   // The saved color, so the first paint matches the desk buddy before the
   // script runs. Dragging the picker updates the same variables live.
@@ -214,7 +269,7 @@ void handleRoot() {
   } else if (checking) {
     html += "<span class='wait'>checking&hellip;</span>";
   } else {
-    html += "<span class='wait'>needs a ZIP code and API key</span>";
+    html += "<span class='wait'>needs a postal code and API key</span>";
   }
   html += "</div>";
 
@@ -227,6 +282,31 @@ void handleRoot() {
           "</span></div>"
           "<div class='hint'>Colors the heading, links, choices, and Save button on this page, "
           "and the highlights on the desk buddy. Pink stays for errors, the umbrella, and sunset.</div>";
+
+  // Rear RGB LED. Moving these previews on the desk right away.
+  html += "<label>Rear LED</label><div class='units'><label><input type='checkbox' id='ledon' "
+          "name='ledon' value='1'";
+  if (s.ledOn) html += " checked";
+  html += "> On</label></div>";
+  html += "<div class='color-row' style='margin-top:10px'>"
+          "<input type='color' id='ledcolor' name='ledcolor' value='" +
+          hexColor(s.ledColor) + "'><span id='ledcolor-hex'>" + hexColor(s.ledColor) +
+          "</span></div>";
+  html += "<div class='swatches'>";
+  const char* swatches[] = {"#ff0000", "#ff6a00", "#ffd000", "#00ff40", "#00e5ff",
+                            "#0040ff", "#a000ff", "#ff2d95", "#ffffff"};
+  for (const char* sw : swatches) {
+    html += String("<button type='button' data-color='") + sw + "' style='background:" + sw +
+            "' aria-label='" + sw + "'></button>";
+  }
+  html += "<button type='button' class='text' data-color='accent'>Match accent</button></div>";
+  html += "<div class='color-row' style='margin-top:12px'><input type='range' id='ledbright' "
+          "name='ledbright' min='1' max='100' value='" +
+          String(s.ledBrightness) + "'><span id='ledbright-out'>" + String(s.ledBrightness) +
+          "%</span></div>";
+  html += "<div class='hint'>The RGB LED on the back of the board. It changes on the desk as you "
+          "pick, and keeps the color once you press Save (an unsaved try-out goes back after "
+          "two minutes). Mixed colors depend on the LED; pure red, green, and blue look best.</div>";
 
   html += "<label>Screens</label><div class='screens'>";
   const char* screenNames[] = {"Home", "Hourly", "Badge", "WiGLE", "Wardrift", "Stars", "Repos"};
@@ -280,9 +360,25 @@ void handleRoot() {
           "<input type='text' id='name' name='name' maxlength='20' value='" +
           escapeHtml(s.name) + "'>";
 
-  html += "<label for='zip'>ZIP code (for weather)</label>"
-          "<input type='text' id='zip' name='zip' maxlength='10' inputmode='numeric' value='" +
-          escapeHtml(s.zip) + "'>";
+  html += "<label for='country'>Country</label><select id='country' name='country'>";
+  const location::Country* chosen = location::findCountry(s.country);
+  if (!chosen) chosen = location::findCountry(location::DEFAULT_COUNTRY);
+  for (size_t i = 0; i < location::countryCount(); i++) {
+    const location::Country& c = location::countryAt(i);
+    html += String("<option value='") + c.code + "' data-ex='" + escapeHtml(c.example) + "'";
+    if (&c == chosen) html += " selected";
+    html += ">" + escapeHtml(c.name) + "</option>";
+  }
+  html += "</select>";
+  const bool other = s.country == location::OTHER;
+  html += String("<label for='zip' id='zip-label'>") +
+          (other ? "City name or lat,lon (for weather)" : "Postal code (for weather)") +
+          "</label><input type='text' id='zip' name='zip' maxlength='64' autocomplete='postal-code' "
+          "placeholder='e.g. " + escapeHtml(chosen->example) + "' value='" + escapeHtml(s.zip) + "'>";
+  html += "<div class='hint'>US ZIP, UK and Canadian postcodes go straight to WeatherAPI. "
+          "Other countries are looked up once on <a href='https://www.zippopotam.us/'>zippopotam.us</a> "
+          "and turned into a map position. Country not listed, or code not found? Pick "
+          "<i>Other</i> and type a city name or latitude,longitude.</div>";
 
   // The key is never put back into the page: the box starts empty.
   html += "<label for='wkey'>WeatherAPI.com key</label>"
@@ -432,6 +528,7 @@ void handleRoot() {
 
   html += "<p class='hint'>To change the Wi-Fi network, hold a finger on the screen for 5 seconds.</p>";
   html += FPSTR(PAGE_SCRIPT);
+  html += FPSTR(PAGE_SCRIPT_2);
   html += "</body></html>";
 
   server.send(200, "text/html; charset=utf-8", html);
@@ -463,19 +560,38 @@ void handleOtaUpdate() {
   server.send(200, "text/html; charset=utf-8", html);
 }
 
+// Live LED preview from the settings page. Nothing is saved.
+void handleLedPreview() {
+  uint32_t color = settings->ledColor;
+  parseHexColor(server.arg("color"), color);
+  long bright = server.hasArg("bright") ? server.arg("bright").toInt() : settings->ledBrightness;
+  if (bright < 1) bright = 1;
+  if (bright > 100) bright = 100;
+  rgb_led::preview(server.arg("on") == "1", color, static_cast<uint8_t>(bright));
+  server.send(204);
+}
+
 void handleSave() {
   Settings& s = *settings;
 
   String zip = server.arg("zip");
   zip.trim();
+  String country = server.arg("country");
+  country.trim();
+  country.toUpperCase();
+  if (!location::findCountry(country)) {
+    // Older page still open in a browser (no country box): keep what's saved.
+    country = server.hasArg("country") ? String(location::DEFAULT_COUNTRY) : s.country;
+  }
   String key = server.arg("wkey");
   key.trim();
   if (key.isEmpty()) key = s.weatherKey;  // blank = keep the saved key
 
-  if (zip != s.zip || key != s.weatherKey) {
+  if (zip != s.zip || country != s.country || key != s.weatherKey) {
     s.placeLabel = "";  // location or key changed: check it again
   }
   s.zip = zip;
+  s.country = country;
   s.weatherKey = key;
   s.name = server.arg("name");
   s.name.trim();
@@ -521,6 +637,13 @@ void handleSave() {
                                  : static_cast<uint8_t>(PetAnimal::Fox);
   uint32_t accent = s.accent;
   if (parseHexColor(server.arg("accent"), accent)) s.accent = accent;
+  s.ledOn = server.hasArg("ledon");
+  uint32_t ledColor = s.ledColor;
+  if (parseHexColor(server.arg("ledcolor"), ledColor)) s.ledColor = ledColor;
+  if (server.hasArg("ledbright")) {
+    const long bright = server.arg("ledbright").toInt();
+    if (bright >= 1 && bright <= 100) s.ledBrightness = static_cast<uint8_t>(bright);
+  }
   uint8_t screens = 1u << ScreenStatus;
   for (uint8_t i = 0; i < ScreenStatus; i++) {
     if (server.hasArg("screen" + String(i))) screens |= 1u << i;
@@ -551,6 +674,8 @@ void handleSave() {
                 clockTime(s.wigleMinute).c_str(),
                 (s.wardriftUser.length() && s.wardriftPass.length()) ? "set" : "none",
                 s.petAnimal, s.petMode, hexColor(s.accent).c_str());
+  Serial.printf("[web] country=%s led=%s %s %u%%\n", s.country.c_str(), s.ledOn ? "on" : "off",
+                hexColor(s.ledColor).c_str(), s.ledBrightness);
   Serial.printf("[web] screens: %02x  home-strip: src=%u fields=%u/%u/%u\n", s.screens,
                 s.homeStripSource, s.homeStripField[0], s.homeStripField[1], s.homeStripField[2]);
 
@@ -571,6 +696,7 @@ void begin(Settings& s, const String& error) {
   if (!routesAdded) {
     server.on("/", HTTP_GET, handleRoot);
     server.on("/save", HTTP_POST, handleSave);
+    server.on("/led", HTTP_POST, handleLedPreview);
     server.on("/ota/check", HTTP_POST, handleOtaCheck);
     server.on("/ota/update", HTTP_POST, handleOtaUpdate);
     server.on("/icons", HTTP_GET, [] {

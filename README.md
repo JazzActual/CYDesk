@@ -125,7 +125,7 @@ When it is on your Wi-Fi, the screen shows a QR code until setup is finished. Th
 Add at least:
 
 - the name used in the greeting
-- a ZIP code
+- a country and postal code (US ZIP, UK/Canadian postcode, or a postal code from about 70 other countries)
 - a free [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) key
 
 The rest of the settings page is optional. Password boxes start empty after a key is saved. Leave one blank to keep what is already stored.
@@ -147,13 +147,20 @@ Served by the board at `http://cydesk.local` once it is on your Wi-Fi.
 - Accent color. Default cyan. It replaces the highlights on the desk and on this page as you move the picker. Pink stays for errors, the umbrella, and the sunset arrow.
 - Which screens a tap visits.
 - Home strip. Off until you pick WDGWars, WiGLE, or Wardrift, then choose which three metrics from that account show top-right on Home.
-- Name, ZIP code, and WeatherAPI key. °F or °C. 12-hour or 24-hour clock. The clock's offset comes from the weather location, including daylight saving.
+- Name, country, postal code, and WeatherAPI key. °F or °C. 12-hour or 24-hour clock. The clock's offset comes from the weather location, including daylight saving.
+- Rear LED. On/off, color (picker, swatches, or match the accent), and brightness. The LED on the back of the board changes as you move the controls; Save keeps it. An unsaved try-out goes back to the saved color after two minutes. Off by default.
 - WDGWars key.
 - WiGLE API name, token, and the time of day to check.
 - Wardrift username and password.
 - Up to four public GitHub repos, one per line.
 - Desk pet mode and animal.
 - Firmware. Build id, **Check for updates** against the published channel for this board size, and a short note on USB / espota backups (see [Updating firmware](#updating-firmware)).
+
+### International postal codes
+
+WeatherAPI.com reads US ZIP codes, UK postcodes, and Canadian postal codes on its own, so those go straight to it. For any other listed country the desk looks the code up once on [zippopotam.us](https://www.zippopotam.us/) (free, no key), saves the latitude/longitude it gets back, and asks WeatherAPI for that point. The lookup runs again only when the country or code changes. Common ways of typing a code are tidied first (for example Netherlands `1012 AB` → `1012`, Poland `00001` → `00-001`, Japan `1000001` → `100-0001`).
+
+If your country is not in the list, or the code is not found, choose **Other** and type a city name (`Dublin`) or `latitude,longitude` (`53.35,-6.26`).
 
 Weather refreshes about every 15 minutes and covers the current conditions, sunrise and sunset, and the hourly page in one request.
 

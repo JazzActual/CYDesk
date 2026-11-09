@@ -14,8 +14,9 @@
 //   1. No Wi-Fi saved -> the Wi-Fi portal opens by itself (CYDesk).
 //      Holding a finger on the screen for 5 seconds reopens it.
 //   2. On the home Wi-Fi, the board serves a settings page at
-//      http://cydesk.local for name, ZIP, WeatherAPI key, WDGWars key,
-//      WiGLE login, Wardrift username and password, GitHub repos, and units.
+//      http://cydesk.local for name, country + postal code, WeatherAPI key,
+//      WDGWars key, WiGLE login, Wardrift username and password, GitHub
+//      repos, units, and the rear RGB LED color.
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -31,6 +32,7 @@
 #include "pages.h"
 #include "pins.h"
 #include "portal.h"
+#include "rgb_led.h"
 #include "settings.h"
 #include "settings_web.h"
 #include "theme.h"
@@ -73,13 +75,6 @@ void applyScreens() {
   pages.settle();
 }
 
-void ledsOff() {
-  for (int pin : {PIN_LED_R, PIN_LED_G, PIN_LED_B}) {
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, HIGH);
-  }
-}
-
 // Runs the Wi-Fi portal, then gets back to normal: reconnect Wi-Fi if needed
 // and redraw the current page.
 void openWifiSetup(const char* reason) {
@@ -120,6 +115,7 @@ void serviceSettingsPage() {
     wigle::prepare(settings);
     wardrift::prepare(settings);
     github::prepare(settings);
+    rgb_led::apply(settings);  // saved LED color (also ends a live preview)
     applyScreens();
     pages.redraw();
   }
@@ -153,7 +149,7 @@ void updateHoldBar() {
 }
 
 void setup() {
-  ledsOff();
+  rgb_led::begin();  // dark until the saved setting is loaded
   Serial.begin(115200);
 #if defined(BOARD_CYD40C)
   Serial.println("\nCYDesk: 4.0 inch capacitive (ST7796 + GT911)");
@@ -184,6 +180,7 @@ void setup() {
   pages.add(&statusPage);
 
   settings.load();
+  rgb_led::apply(settings);
   applyScreens();
   prepareWifi();
 
@@ -231,6 +228,7 @@ void loop() {
   }
   const bool networkReady = startNetworkServices();
   serviceSettingsPage();
+  rgb_led::handle();
   ota::handle();
   // One download at a time: weather, then WDGWars, then WiGLE, then Wardrift,
   // then one GitHub repo.

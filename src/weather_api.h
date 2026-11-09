@@ -51,6 +51,8 @@ struct WeatherReport {
   int precipChanceAt(time_t when) const;
 };
 
-// Fetches current weather + a 2-day forecast for settings.zip. Needs Wi-Fi.
+// Fetches current weather + a 2-day forecast. `query` is what WeatherAPI's
+// q= gets: a US ZIP, UK/Canadian postcode, city name or "lat,lon" (see
+// location::resolve). Needs Wi-Fi.
 // Takes ~2–3 s (the forecast reply is large; only the needed parts are kept).
-WeatherReport fetchWeather(const Settings& settings);
+WeatherReport fetchWeather(const Settings& settings, const String& query);

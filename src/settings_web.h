@@ -1,7 +1,8 @@
 // The settings page: a small web page served by the board itself on the home
 // network, at http://cydesk.local (or its IP address). Open it on a phone or
-// computer to set the name, ZIP, WeatherAPI key, WDGWars key, WiGLE login,
-// Wardrift login, GitHub repos, which screens are on, units, and the accent color.
+// computer to set the name, country + postal code, WeatherAPI key, WDGWars
+// key, WiGLE login, Wardrift login, GitHub repos, which screens are on, units,
+// the accent color, and the rear RGB LED.
 //
 // Because the phone stays on the normal home Wi-Fi, you can switch apps to
 // copy/paste a key without losing anything.

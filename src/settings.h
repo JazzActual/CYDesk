@@ -32,7 +32,8 @@ enum Screen : uint8_t {
 
 struct Settings {
   String name;             // used in the greeting: "Morning, <name>!"
-  String zip;              // weather location (US ZIP / postcode), e.g. "60601"
+  String zip;              // weather location: postal code (or city / lat,lon for Other)
+  String country = "US";   // ISO two-letter country for `zip`; "ZZ" = Other (see location.h)
   String weatherKey;       // the user's own WeatherAPI.com API key
   String wdgKey;           // WDGWars API key; the badge page shows that account's stats
   String wigleName;        // WiGLE API name; never printed
@@ -73,6 +74,16 @@ struct Settings {
   // Filled in once WeatherAPI confirms the ZIP, e.g. "Chicago, Illinois".
   // Empty = not checked yet (or ZIP/key changed since).
   String placeLabel;
+
+  // Saved postal-code lookup for countries WeatherAPI can't read directly:
+  // "lat,lon", and the "country:code" it belongs to. See location.h.
+  String geoQuery;
+  String geoFor;
+
+  // Rear RGB LED. Off by default (the LED stayed dark before this setting).
+  bool ledOn = false;
+  uint32_t ledColor = 0x00E5FFu;  // #RRGGBB
+  uint8_t ledBrightness = 40;     // percent, 1-100
 
   void load();
   void save() const;

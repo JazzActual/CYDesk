@@ -126,7 +126,7 @@ void drawFinishSetup(TFT_eSPI& tft) {
   tft.drawString("or " + WiFi.localIP().toString(), x, 46 + 4 * copyStep + 26, 2);
 
   tft.setTextDatum(BC_DATUM);
-  tft.drawString("Add your name, ZIP code and WeatherAPI key", tft.width() / 2, tft.height() - 10, 2);
+  tft.drawString("Add name, postal code and WeatherAPI key", tft.width() / 2, tft.height() - 10, 2);
 }
 
 String StatusPage::weatherLine() const {
